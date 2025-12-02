@@ -49,6 +49,7 @@ const createItemSchema = z.object({
   purchaseDate: z.string().optional(),
   purchaseValue: z.number().optional(),
   notes: z.string().optional(),
+  attributes: z.record(z.any()).optional(), // Atributos personalizados como JSON
 });
 
 // GET /api/items/next-code - Obtener el siguiente código disponible
@@ -151,6 +152,8 @@ router.get('/:code', optionalAuth, async (req: AuthRequest, res: Response) => {
 router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const data = createItemSchema.parse(req.body);
+    
+    console.log('📝 Creating item with data:', JSON.stringify(data, null, 2));
 
     // Generar código automáticamente si no se provee
     const code = data.code || await getNextCode();

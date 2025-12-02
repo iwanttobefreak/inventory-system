@@ -54,8 +54,8 @@ Este repositorio incluye:
 
 ✅ **Documentación**
 - Guías de uso (ADMIN_GUIDE.md, QUICK_START.md, etc.)
-- Documentación de features (ATTRIBUTES_UPDATE.md, AUTO_NAME_UPDATE.md, CONTACT_MESSAGE_GUIDE.md)
-- Guías de deployment (DEPLOY.md, NGINX_SETUP.md)
+- Documentación de features (LABELS_FEATURE.md, LABELS_GUIDE.md)
+- Guías de deployment (DEPLOY.md, MIGRATION_GUIDE.md)
 
 ---
 

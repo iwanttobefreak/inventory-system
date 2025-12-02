@@ -38,6 +38,8 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
     ports:
       - "${BACKEND_PORT:-4000}:${BACKEND_PORT:-4000}"
+    volumes:
+      - upload_data:/app/uploads
     networks:
       - inventory_network
 
@@ -59,6 +61,8 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  upload_data:
     driver: local
 
 networks:

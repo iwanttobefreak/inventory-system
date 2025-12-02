@@ -69,12 +69,12 @@ NEXT_PUBLIC_API_URL=http://localhost:9090/api
 NEXT_PUBLIC_SITE_URL=http://localhost:8080
 ```
 
-### Producción con Nginx
+### Producción
 ```env
 FRONTEND_PORT=3000
 BACKEND_PORT=4000
 DB_PORT=5432
-NEXT_PUBLIC_API_URL=/api
+NEXT_PUBLIC_API_URL=http://localhost:4000/api
 NEXT_PUBLIC_SITE_URL=https://tudominio.com
 NODE_ENV=production
 JWT_SECRET=tu_secret_aleatorio_muy_seguro_y_largo

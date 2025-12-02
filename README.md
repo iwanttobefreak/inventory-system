@@ -13,7 +13,6 @@ Sistema completo de gestión de inventario para productoras audiovisuales con c�
 - ✅ **Base de datos PostgreSQL** - Datos persistentes y seguros
 - ✅ **Docker** - Fácil despliegue en cualquier servidor
 - ✅ **Responsive** - Funciona en móvil, tablet y desktop
-- ✅ **Acceso remoto con Nginx** - Proxy inverso para acceso externo seguro
 
 ## 🛠️ Stack Tecnológico
 
@@ -363,50 +362,15 @@ docker-compose restart backend
 git clone https://github.com/iwanttobefreak/inventory-system.git
 cd inventory-system
 
-# 2. Editar docker-compose.yml con tu dominio
-# Cambiar NEXT_PUBLIC_API_URL a tu dominio real
+# 2. Editar .env con tu configuración
+cp .env.example .env
+# Editar los valores necesarios (puertos, URL del frontend, etc.)
 
 # 3. Levantar servicios
 docker-compose up -d --build
 
 # 4. Verificar que todo esté corriendo
 docker-compose ps
-```
-
-### Opción 2: Con Nginx reverse proxy
-
-```nginx
-# /etc/nginx/sites-available/inventory
-
-server {
-    listen 80;
-    server_name tudominio.com;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-
-    location /api {
-        proxy_pass http://localhost:4000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-### Opción 3: Con SSL (Let's Encrypt)
-
-```bash
-# Instalar certbot
-sudo apt install certbot python3-certbot-nginx
-
-# Obtener certificado
-sudo certbot --nginx -d tudominio.com
-
-# Renovación automática
-sudo certbot renew --dry-run
 ```
 
 ## 📊 API Endpoints

@@ -99,103 +99,24 @@ docker-compose logs -f
 curl http://localhost:4000/health
 ```
 
-## 🌐 Configurar Dominio y SSL
+## 🌐 Configurar Dominio (Opcional)
 
-### Con Nginx como Reverse Proxy
+Si quieres usar un dominio personalizado, necesitarás:
 
-#### 1. Instalar Nginx
-
-```bash
-sudo apt install nginx -y
-```
-
-#### 2. Crear configuración
+1. **Apuntar el dominio a tu servidor** (configurar DNS A record)
+2. **Actualizar las URLs en `.env`:**
 
 ```bash
-sudo nano /etc/nginx/sites-available/inventory
+# Editar .env
+nano .env
 ```
 
-Pega esto (cambia `tudominio.com` por tu dominio):
-
-```nginx
-server {
-    listen 80;
-    server_name tudominio.com www.tudominio.com;
-
-    # Frontend
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # Backend API
-    location /api {
-        proxy_pass http://localhost:4000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
+Cambiar:
+```env
+NEXT_PUBLIC_SITE_URL=https://tudominio.com
 ```
 
-#### 3. Activar la configuración
-
-```bash
-# Crear symlink
-sudo ln -s /etc/nginx/sites-available/inventory /etc/nginx/sites-enabled/
-
-# Probar configuración
-sudo nginx -t
-
-# Reiniciar Nginx
-sudo systemctl restart nginx
-```
-
-#### 4. Instalar SSL con Let's Encrypt (GRATIS)
-
-```bash
-# Instalar Certbot
-sudo apt install certbot python3-certbot-nginx -y
-
-# Obtener certificado SSL
-sudo certbot --nginx -d tudominio.com -d www.tudominio.com
-
-# Seguir las instrucciones en pantalla
-
-# Renovación automática (se configura automáticamente)
-sudo certbot renew --dry-run
-```
-
-### Actualizar URLs en docker-compose.yml
-
-```bash
-nano docker-compose.yml
-```
-
-Cambia:
-```yaml
-frontend:
-  environment:
-    NEXT_PUBLIC_API_URL: https://tudominio.com/api  # Cambiar a tu dominio
-
-backend:
-  environment:
-    FRONTEND_URL: https://tudominio.com  # Cambiar a tu dominio
-```
-
-Reinicia los servicios:
+3. **Reiniciar los servicios:**
 ```bash
 ./start.sh restart
 ```
@@ -205,14 +126,14 @@ Reinicia los servicios:
 ### 1. Configurar Firewall
 
 ```bash
-# Permitir SSH, HTTP y HTTPS
+# Permitir SSH
 sudo ufw allow 22/tcp
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
 
-# Cerrar puertos de Docker (solo accesibles via Nginx)
-sudo ufw deny 3000/tcp
-sudo ufw deny 4000/tcp
+# Permitir los puertos del frontend y backend
+sudo ufw allow 3000/tcp
+sudo ufw allow 4000/tcp
+
+# Bloquear puerto de base de datos desde externa
 sudo ufw deny 5432/tcp
 
 # Activar firewall
@@ -283,13 +204,6 @@ docker stats
 podman stats
 ```
 
-### Logs de Nginx
-
-```bash
-sudo tail -f /var/log/nginx/access.log
-sudo tail -f /var/log/nginx/error.log
-```
-
 ## 🔄 Actualizar la Aplicación
 
 ```bash
@@ -329,28 +243,15 @@ docker-compose logs db
 
 ### Frontend no conecta con backend
 
-Verifica que `NEXT_PUBLIC_API_URL` en docker-compose.yml apunte a la URL correcta.
-
-### SSL no funciona
-
-```bash
-# Verificar configuración de Nginx
-sudo nginx -t
-
-# Ver logs de Certbot
-sudo certbot certificates
-
-# Renovar certificado manualmente
-sudo certbot renew
-```
+Verifica que `NEXT_PUBLIC_API_URL` en `.env` apunte a la URL correcta (ej: `http://localhost:4000/api`).
 
 ## 📞 Soporte
 
 Si tienes problemas, revisa:
 1. Los logs: `./start.sh logs`
 2. El estado de los servicios: `./start.sh status`
-3. Los logs de Nginx: `sudo tail -f /var/log/nginx/error.log`
+3. La configuración en `.env`
 
 ---
 
-**¡Listo! Tu sistema de inventario está desplegado de forma segura en tu servidor!** 🎉
+**¡Listo! Tu sistema de inventario está desplegado en tu servidor!** 🎉
