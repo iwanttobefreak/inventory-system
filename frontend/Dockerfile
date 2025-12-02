@@ -16,6 +16,14 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Declarar argumentos de build
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_BACKEND_PORT
+
+# Convertir argumentos en variables de entorno para el build
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_BACKEND_PORT=$NEXT_PUBLIC_BACKEND_PORT
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
