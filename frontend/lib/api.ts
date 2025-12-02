@@ -1,12 +1,20 @@
 import axios from 'axios';
 
-// Forzar URL absoluta para desarrollo local
-// En producción con nginx, cambiar a /api
-const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-  ? 'http://localhost:4000/api'
-  : (process.env.NEXT_PUBLIC_API_URL || '/api');
+// Determinar la URL de la API
+let API_URL = 'http://localhost:4000/api'; // Default para desarrollo
 
-console.log('🔧 API URL configurada:', API_URL);
+if (typeof window !== 'undefined') {
+  // Código del cliente (navegador)
+  // Intentar obtener el puerto del backend desde las variables de entorno o usar el default
+  const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT || '4000';
+  API_URL = `http://localhost:${backendPort}/api`;
+  console.log('🔧 API URL (cliente):', API_URL);
+} else {
+  // Código del servidor (SSR) - usar el nombre del servicio Docker
+  const backendPort = process.env.BACKEND_PORT || '4000';
+  API_URL = `http://backend:${backendPort}/api`;
+  console.log('🔧 API URL (servidor):', API_URL);
+}
 
 export const api = axios.create({
   baseURL: API_URL,
