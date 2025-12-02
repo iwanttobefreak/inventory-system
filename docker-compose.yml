@@ -6,15 +6,15 @@ services:
     image: postgres:16-alpine
     container_name: inventory_db
     environment:
-      POSTGRES_USER: inventory_user
-      POSTGRES_PASSWORD: inventory_pass
-      POSTGRES_DB: inventory_db
+      POSTGRES_USER: ${POSTGRES_USER:-inventory_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inventory_pass_2024}
+      POSTGRES_DB: ${POSTGRES_DB:-inventory_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U inventory_user -d inventory_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-inventory_user} -d ${POSTGRES_DB:-inventory_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,17 +31,13 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://inventory_user:inventory_pass@db:5432/inventory_db?schema=public
-      JWT_SECRET: tu_secreto_super_seguro_cambiar_en_produccion
+      DATABASE_URL: ${DATABASE_URL:-postgresql://inventory_user:inventory_pass_2024@db:5432/inventory_db?schema=public}
+      JWT_SECRET: ${JWT_SECRET:-tu_secreto_super_seguro_cambiar_en_produccion}
       PORT: 4000
-      FRONTEND_URL: http://localhost:3000
-      # Información de la productora
-      COMPANY_NAME: "Mi Productora Audiovisual"
-      COMPANY_PHONE: "+34 XXX XXX XXX"
-      COMPANY_EMAIL: "info@miproductora.com"
-      COMPANY_ADDRESS: "Calle Ejemplo, 123, Madrid"
+      FRONTEND_URL: http://localhost:${FRONTEND_PORT:-3000}
+      NODE_ENV: ${NODE_ENV:-development}
     ports:
-      - "4000:4000"
+      - "${BACKEND_PORT:-4000}:4000"
     networks:
       - inventory_network
 
@@ -54,9 +50,9 @@ services:
     depends_on:
       - backend
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:4000/api
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     networks:
       - inventory_network
 
