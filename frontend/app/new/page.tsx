@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import axios from 'axios';
+import { itemsAPI } from '@/lib/api';
 
 export default function NewItemPage() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function NewItemPage() {
 
   const fetchNextCode = async () => {
     try {
-      const response = await axios.get('/api/items/next-code');
+      const response = await itemsAPI.getNextCode();
       setNextCode(response.data.code);
     } catch (error) {
       console.error('Error fetching next code:', error);

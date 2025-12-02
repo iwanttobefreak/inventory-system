@@ -679,9 +679,9 @@ export default function AdminPage() {
                               .map((attr) => (
                                 <div
                                   key={attr.id}
-                                  className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg"
+                                  className="flex items-start justify-between p-3 bg-white border border-gray-200 rounded-lg gap-4"
                                 >
-                                  <div className="flex-1">
+                                  <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                       <span className="font-medium text-gray-900">{attr.name}</span>
                                       {attr.required && (
@@ -704,12 +704,12 @@ export default function AdminPage() {
                                       )}
                                     </div>
                                     {attr.type === 'SELECT' && attr.options && (
-                                      <div className="text-xs text-gray-500 mt-1 truncate">
-                                        Opciones: {attr.options}
+                                      <div className="text-xs text-gray-500 mt-1 break-words">
+                                        <span className="font-medium">Opciones:</span> {attr.options}
                                       </div>
                                     )}
                                   </div>
-                                  <div className="flex gap-2">
+                                  <div className="flex gap-2 flex-shrink-0">
                                     <button
                                       onClick={() => handleEditAttribute(attr)}
                                       className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"

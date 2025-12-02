@@ -54,6 +54,7 @@ export const itemsAPI = {
     }
     return api.get(`/items/${code}`);
   },
+  getNextCode: () => api.get('/items/next-code'),
   create: (data: any) => api.post('/items', data),
   update: (code: string, data: any) => api.put(`/items/${code}`, data),
   delete: (code: string) => api.delete(`/items/${code}`),
