@@ -3,9 +3,12 @@ import axios from 'axios';
 // Determinar la URL de la API
 let API_URL = 'http://localhost:4000/api'; // Default para desarrollo
 
-if (typeof window !== 'undefined') {
-  // Código del cliente (navegador)
-  // Intentar obtener el puerto del backend desde las variables de entorno o usar el default
+// Si NEXT_PUBLIC_API_URL está definida, usarla directamente (para producción con nginx)
+if (process.env.NEXT_PUBLIC_API_URL) {
+  API_URL = process.env.NEXT_PUBLIC_API_URL;
+  console.log('🔧 API URL (from env):', API_URL);
+} else if (typeof window !== 'undefined') {
+  // Código del cliente (navegador) - desarrollo local
   const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT || '4000';
   API_URL = `http://localhost:${backendPort}/api`;
   console.log('🔧 API URL (cliente):', API_URL);
