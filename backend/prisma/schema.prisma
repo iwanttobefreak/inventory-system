@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model Item {
+  id          String       @id @default(cuid())
+  code        String       @unique // Código único para QR
+  name        String
+  description String?
+  category    Category     @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  status      ItemStatus   @default(AVAILABLE)
+  location    String?
+  purchaseDate DateTime?
+  purchaseValue Float?
+  brand       String?
+  model       String?
+  serialNumber String?
+  notes       String?
+  imageUrl    String?
+  qrCodeUrl   String?      // URL del código QR generado
+  attributes  Json?        // Atributos personalizados según la categoría (ej: {"type": "XLR-XLR", "length": "5m"})
+  
+  history     ItemHistory[]
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("items")
+}
+
+enum ItemStatus {
+  AVAILABLE      // Disponible
+  IN_USE         // En uso
+  MAINTENANCE    // En mantenimiento
+  REPAIR         // En reparación
+  LOST           // Perdido
+  RETIRED        // Dado de baja
+}
+
+model Category {
+  id          String              @id @default(cuid())
+  name        String              @unique
+  description String?
+  icon        String?             // Nombre del icono o emoji
+  color       String?             // Color hex para UI
+  items       Item[]
+  attributes  CategoryAttribute[] // Atributos personalizados de esta categoría
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@map("categories")
+}
+
+model CategoryAttribute {
+  id          String              @id @default(cuid())
+  category    Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId  String
+  name        String              // Nombre del atributo (ej: "Tipo de conector")
+  key         String              // Clave para guardar en JSON (ej: "connector_type")
+  type        AttributeType       @default(TEXT) // Tipo de dato
+  options     String?             // Opciones separadas por comas si es SELECT (ej: "XLR-XLR,XLR-JACK,JACK-JACK")
+  required    Boolean             @default(false) // Si es obligatorio
+  order       Int                 @default(0) // Orden de visualización
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([categoryId, key]) // No puede haber dos atributos con la misma clave en una categoría
+  @@map("category_attributes")
+}
+
+enum AttributeType {
+  TEXT      // Texto libre
+  NUMBER    // Número
+  SELECT    // Lista desplegable
+  DATE      // Fecha
+  BOOLEAN   // Sí/No
+}
+
+model ItemHistory {
+  id          String   @id @default(cuid())
+  item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId      String
+  action      String   // Ej: "Prestado a", "Devuelto", "Cambio de estado"
+  description String?
+  performedBy String?  // Nombre de quien realizó la acción
+  oldStatus   ItemStatus?
+  newStatus   ItemStatus?
+  createdAt   DateTime @default(now())
+
+  @@map("item_history")
+}
