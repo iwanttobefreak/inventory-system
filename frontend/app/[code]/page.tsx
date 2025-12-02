@@ -677,7 +677,10 @@ export default function ItemCodePage() {
                 {item.location && (
                   <div>
                     <h3 className="text-sm font-medium text-gray-500 mb-1">Ubicación</h3>
-                    <p className="text-gray-900">{item.location}</p>
+                    <p className="text-gray-900">
+                      {item.location.icon && <span className="mr-1">{item.location.icon}</span>}
+                      {item.location.name}
+                    </p>
                   </div>
                 )}
                 {item.purchaseDate && (

@@ -6,7 +6,8 @@ export interface Item {
   category: Category;
   categoryId: string;
   status: ItemStatus;
-  location?: string;
+  location?: Location;
+  locationId?: string;
   purchaseDate?: string;
   purchaseValue?: number;
   brand?: string;
@@ -15,6 +16,16 @@ export interface Item {
   notes?: string;
   imageUrl?: string;
   qrCodeUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  image?: string;
   createdAt: string;
   updatedAt: string;
 }

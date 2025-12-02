@@ -43,6 +43,25 @@ async function main() {
     console.log(`✅ Categoría creada: ${category.name}`);
   }
 
+  // Crear ubicaciones
+  const locations = [
+    { name: 'Estudio Principal', description: 'Estudio principal de grabación', icon: '🏢' },
+    { name: 'Almacén A', description: 'Almacén de equipos de audio', icon: '📦' },
+    { name: 'Set de rodaje', description: 'Área de rodaje activa', icon: '🎬' },
+    { name: 'Almacén B', description: 'Almacén de cables y accesorios', icon: '🔌' },
+  ];
+
+  const createdLocations: any[] = [];
+  for (const loc of locations) {
+    const location = await prisma.location.upsert({
+      where: { name: loc.name },
+      update: {},
+      create: loc,
+    });
+    createdLocations.push(location);
+    console.log(`✅ Ubicación creada: ${location.name}`);
+  }
+
   // Crear items de ejemplo
   const items = [
     {
@@ -54,7 +73,7 @@ async function main() {
       brand: 'Sony',
       model: 'A7S III',
       serialNumber: 'SN123456789',
-      location: 'Estudio Principal',
+      locationId: createdLocations[0].id, // Estudio Principal
       purchaseDate: new Date('2023-01-15'),
       purchaseValue: 3999.99,
     },
@@ -67,7 +86,7 @@ async function main() {
       brand: 'Rode',
       model: 'NTG3',
       serialNumber: 'RD987654321',
-      location: 'Almacén A',
+      locationId: createdLocations[1].id, // Almacén A
       purchaseDate: new Date('2022-06-10'),
       purchaseValue: 699.00,
     },
@@ -79,7 +98,7 @@ async function main() {
       status: 'IN_USE',
       brand: 'Aputure',
       model: '300d Mark II',
-      location: 'Set de rodaje',
+      locationId: createdLocations[2].id, // Set de rodaje
       purchaseDate: new Date('2023-03-20'),
       purchaseValue: 899.00,
     },
@@ -90,7 +109,7 @@ async function main() {
       categoryId: createdCategories[3].id,
       status: 'AVAILABLE',
       brand: 'Mogami',
-      location: 'Almacén B',
+      locationId: createdLocations[3].id, // Almacén B
       purchaseValue: 45.00,
     },
     {
@@ -101,7 +120,7 @@ async function main() {
       status: 'AVAILABLE',
       brand: 'Manfrotto',
       model: '546B',
-      location: 'Estudio Principal',
+      locationId: createdLocations[0].id, // Estudio Principal
       purchaseDate: new Date('2022-11-05'),
       purchaseValue: 459.00,
     },

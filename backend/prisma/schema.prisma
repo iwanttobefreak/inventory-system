@@ -35,7 +35,8 @@ model Item {
   category    Category     @relation(fields: [categoryId], references: [id])
   categoryId  String
   status      ItemStatus   @default(AVAILABLE)
-  location    String?
+  location    Location?    @relation(fields: [locationId], references: [id])
+  locationId  String?
   purchaseDate DateTime?
   purchaseValue Float?
   brand       String?
@@ -75,6 +76,19 @@ model Category {
   updatedAt   DateTime            @updatedAt
 
   @@map("categories")
+}
+
+model Location {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  icon        String?  // Emoji o nombre de icono
+  image       String?  // URL o path de la foto de la ubicación
+  items       Item[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("locations")
 }
 
 model CategoryAttribute {

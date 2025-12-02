@@ -59,10 +59,13 @@ Sistema completo de gestión de inventario para productoras audiovisuales con c�
 El script `start.sh` detecta automáticamente si tienes Docker o Podman:
 
 ```bash
-# Hacer el script ejecutable (solo la primera vez)
+# 1. Navega al directorio del proyecto
+cd /ruta/a/inventory-system
+
+# 2. Hacer el script ejecutable (solo la primera vez)
 chmod +x start.sh
 
-# Levantar todos los servicios
+# 3. Levantar todos los servicios
 ./start.sh up
 
 # O en segundo plano
@@ -72,7 +75,10 @@ chmod +x start.sh
 ### Método 2: Manual con Docker
 
 ```bash
-# Levantar servicios
+# 1. Navega al directorio del proyecto
+cd /ruta/a/inventory-system
+
+# 2. Levantar servicios
 docker-compose up --build
 
 # O en segundo plano
@@ -82,7 +88,10 @@ docker-compose up -d --build
 ### Método 3: Manual con Podman
 
 ```bash
-# Si tienes podman-compose instalado
+# 1. Navega al directorio del proyecto
+cd /ruta/a/inventory-system
+
+# 2. Si tienes podman-compose instalado
 podman-compose up --build
 
 # O usando docker-compose con Podman
@@ -146,13 +155,15 @@ curl -X POST http://localhost:4000/api/users \
   -H "Content-Type: application/json" \
   -d '{"email":"juan@productora.com","password":"pass123","name":"Juan Pérez","role":"USER"}'
 
-# Opción 2: Usando el script
-docker-compose exec backend npx tsx scripts/create-user.ts \
-  "juan@productora.com" "pass123" "Juan Pérez" "USER"
+# Opción 2: Usando el script (desde el directorio del proyecto)
+cd /ruta/a/inventory-system
+docker-compose exec backend npx tsx scripts/create-user.ts juan@productora.com pass123 "Juan Pérez" USER
 ```
 
 **Listar todos los usuarios:**
 ```bash
+# Desde el directorio del proyecto
+cd /ruta/a/inventory-system
 docker-compose exec backend npx tsx scripts/list-users.ts
 ```
 
@@ -190,9 +201,17 @@ docker-compose exec backend npx tsx scripts/list-users.ts
 
 ## 🐳 Comandos Útiles
 
+⚠️ **IMPORTANTE**: Todos los comandos `docker-compose` deben ejecutarse desde el directorio raíz del proyecto (`inventory-system/`). Si estás en otro directorio, primero navega al proyecto:
+
+```bash
+cd /ruta/a/inventory-system
+```
+
 ### Con el script start.sh
 
 ```bash
+# NOTA: Estos scripts también deben ejecutarse desde el directorio del proyecto
+
 ./start.sh up        # Levantar servicios (con logs)
 ./start.sh start     # Levantar en segundo plano
 ./start.sh down      # Parar servicios
@@ -206,6 +225,8 @@ docker-compose exec backend npx tsx scripts/list-users.ts
 ### Comandos Docker Compose
 
 ```bash
+# NOTA: Ejecuta estos comandos desde el directorio del proyecto
+
 # Ver logs de todos los servicios
 docker-compose logs -f
 
@@ -297,7 +318,8 @@ services:
 ### Backup de la base de datos
 
 ```bash
-# Crear backup
+# Crear backup (desde el directorio del proyecto)
+cd /ruta/a/inventory-system
 docker-compose exec db pg_dump -U inventory_user inventory_db > backup.sql
 
 # Restaurar backup
@@ -309,6 +331,8 @@ docker-compose exec -T db psql -U inventory_user inventory_db < backup.sql
 Edita `backend/prisma/seed.ts` y ejecuta:
 
 ```bash
+# Desde el directorio del proyecto
+cd /ruta/a/inventory-system
 docker-compose exec backend npx prisma db seed
 ```
 
@@ -335,15 +359,18 @@ docker-compose restart backend
 ### Opción 1: Docker en tu servidor
 
 ```bash
-# En tu servidor
-git clone <tu-repo>
+# 1. Clona el repositorio en tu servidor
+git clone https://github.com/iwanttobefreak/inventory-system.git
 cd inventory-system
 
-# Editar docker-compose.yml con tu dominio
+# 2. Editar docker-compose.yml con tu dominio
 # Cambiar NEXT_PUBLIC_API_URL a tu dominio real
 
-# Levantar
+# 3. Levantar servicios
 docker-compose up -d --build
+
+# 4. Verificar que todo esté corriendo
+docker-compose ps
 ```
 
 ### Opción 2: Con Nginx reverse proxy
@@ -410,6 +437,41 @@ POST   /api/categories         # Crear (requiere auth)
 ```
 
 ## 🐛 Troubleshooting
+
+### ❌ Error: "no configuration file provided: not found"
+
+**Causa**: Estás ejecutando comandos `docker-compose` desde un directorio incorrecto.
+
+**Solución**:
+```bash
+# Navega al directorio del proyecto
+cd /ruta/a/inventory-system
+
+# Verifica que estás en el lugar correcto
+ls docker-compose.yml  # Debería mostrar el archivo
+
+# Ahora ejecuta tus comandos
+docker-compose ps
+```
+
+### ❌ Script list-users.ts no funciona
+
+**Causa**: El comando se ejecuta desde un directorio incorrecto o el backend no está corriendo.
+
+**Solución**:
+```bash
+# 1. Navega al directorio del proyecto
+cd /ruta/a/inventory-system
+
+# 2. Verifica que el backend esté corriendo
+docker-compose ps
+
+# 3. Si el backend no está corriendo, levántalo
+docker-compose up -d backend
+
+# 4. Ahora ejecuta el script
+docker-compose exec backend npx tsx scripts/list-users.ts
+```
 
 ### Puerto ya en uso
 

@@ -42,7 +42,7 @@ const createItemSchema = z.object({
   description: z.string().optional(),
   categoryId: z.string(),
   status: z.enum(['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'REPAIR', 'LOST', 'RETIRED']).default('AVAILABLE'),
-  location: z.string().optional(),
+  locationId: z.string().optional(),
   brand: z.string().optional(),
   model: z.string().optional(),
   serialNumber: z.string().optional(),
@@ -88,6 +88,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       where,
       include: {
         category: true,
+        location: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -109,6 +110,7 @@ router.get('/:code', optionalAuth, async (req: AuthRequest, res: Response) => {
       where: { code },
       include: {
         category: true,
+        location: true,
         history: {
           orderBy: {
             createdAt: 'desc',
@@ -220,6 +222,7 @@ router.put('/:code', authenticate, async (req: AuthRequest, res: Response) => {
       },
       include: {
         category: true,
+        location: true,
       },
     });
 

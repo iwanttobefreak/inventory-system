@@ -1,8 +1,12 @@
 import axios from 'axios';
 
-// En producción (con nginx), usará rutas relativas /api
-// En desarrollo local, usará http://localhost:4000/api
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+// Forzar URL absoluta para desarrollo local
+// En producción con nginx, cambiar a /api
+const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? 'http://localhost:4000/api'
+  : (process.env.NEXT_PUBLIC_API_URL || '/api');
+
+console.log('🔧 API URL configurada:', API_URL);
 
 export const api = axios.create({
   baseURL: API_URL,

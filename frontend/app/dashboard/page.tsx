@@ -205,7 +205,7 @@ export default function DashboardPage() {
 
                 {item.location && (
                   <p className="text-sm text-gray-600">
-                    <span className="font-medium">📍</span> {item.location}
+                    <span className="font-medium">{item.location.icon || '📍'}</span> {item.location.name}
                   </p>
                 )}
 
