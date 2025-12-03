@@ -398,7 +398,7 @@ export default function AdminPage() {
                       />
                       <span className="text-sm text-gray-600">o selecciona:</span>
                     </div>
-                    <div className="grid grid-cols-8 gap-2">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                       {ICONOS_SUGERIDOS.map((icono) => (
                         <button
                           key={icono}
@@ -431,7 +431,7 @@ export default function AdminPage() {
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md font-mono text-sm"
                       />
                     </div>
-                    <div className="grid grid-cols-8 gap-2">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                       {COLORES_SUGERIDOS.map((color) => (
                         <button
                           key={color}

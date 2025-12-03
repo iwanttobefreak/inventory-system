@@ -548,7 +548,7 @@ export default function ItemCodePage() {
               Si has encontrado este artículo es porque <strong>lo he perdido</strong>. 
               Por favor, contacta conmigo para devolverlo:
             </p>
-            <div className="space-y-4 text-center">
+            <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
               <p className="text-2xl font-semibold text-gray-900">
                 📱 Móvil: <a href="tel:+34630824788" className="text-blue-600 hover:underline">+34 630 824 788</a>
               </p>
