@@ -1,49 +1,117 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useZxing } from 'react-zxing';
+import { Html5Qrcode } from 'html5-qrcode';
 
 export default function ScannerPage() {
   const router = useRouter();
   const [result, setResult] = useState<string>('');
   const [error, setError] = useState<string>('');
-  const [isScanning, setIsScanning] = useState(true);
+  const [isScanning, setIsScanning] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const isProcessingRef = useRef(false);
 
-  const { ref } = useZxing({
-    onDecodeResult(result) {
-      const text = result.getText();
-      setResult(text);
-      setIsScanning(false);
-      
-      // Extraer el código del item de la URL del QR
-      // Formato esperado: https://kairoframe.lobo99.info/kf-0001
-      // o http://localhost:3000/kf-0001
-      const match = text.match(/\/(kf-\d{4})$/i);
-      
-      if (match) {
-        const itemCode = match[1].toLowerCase();
-        // Redirigir al item
-        router.push(`/${itemCode}`);
-      } else {
-        setError('QR no válido. Debe ser un código del inventario (kf-XXXX).');
-        // Reintentar después de 3 segundos
-        setTimeout(() => {
+  useEffect(() => {
+    // Inicializar el scanner
+    const startScanner = async () => {
+      try {
+        const scanner = new Html5Qrcode('qr-reader');
+        scannerRef.current = scanner;
+
+        // Configuración de escaneo
+        const config = {
+          fps: 10, // Frames por segundo
+          qrbox: { width: 250, height: 250 }, // Área de escaneo
+          aspectRatio: 1.0,
+        };
+
+        // Callback cuando se detecta un QR
+        const onScanSuccess = (decodedText: string) => {
+          // Evitar procesar múltiples escaneos del mismo código
+          if (isProcessingRef.current) return;
+          isProcessingRef.current = true;
+
+          console.log('QR detectado:', decodedText);
+          setResult(decodedText);
+
+          // Detener el scanner
+          scanner.stop().then(() => {
+            setIsScanning(false);
+
+            // Extraer el código del item de la URL del QR
+            // Formato esperado: https://kairoframe.lobo99.info/kf-0001
+            // o http://localhost:3000/kf-0001
+            const match = decodedText.match(/\/(kf-\d{4})$/i);
+
+            if (match) {
+              const itemCode = match[1].toLowerCase();
+              // Redirigir al item
+              setTimeout(() => {
+                router.push(`/${itemCode}`);
+              }, 500);
+            } else {
+              setError('QR no válido. Debe ser un código del inventario (kf-XXXX).');
+              // Reintentar después de 3 segundos
+              setTimeout(() => {
+                isProcessingRef.current = false;
+                setError('');
+                setResult('');
+                startScanner();
+              }, 3000);
+            }
+          });
+        };
+
+        const onScanFailure = (error: any) => {
+          // No mostrar errores de escaneo fallido (es normal que falle muchas veces)
+          // console.warn('Scan error:', error);
+        };
+
+        // Intentar usar la cámara trasera en móviles
+        try {
+          await scanner.start(
+            { facingMode: 'environment' }, // Cámara trasera
+            config,
+            onScanSuccess,
+            onScanFailure
+          );
           setIsScanning(true);
-          setError('');
-          setResult('');
-        }, 3000);
+        } catch (err) {
+          // Si falla la cámara trasera, intentar con cualquier cámara
+          await scanner.start(
+            { facingMode: 'user' }, // Cámara frontal
+            config,
+            onScanSuccess,
+            onScanFailure
+          );
+          setIsScanning(true);
+        }
+      } catch (err: any) {
+        console.error('Error al iniciar scanner:', err);
+        setError('Error al acceder a la cámara. Verifica los permisos.');
       }
-    },
-    onError(error) {
-      console.error('Error del scanner:', error);
-      setError('Error al acceder a la cámara. Verifica los permisos.');
-    },
-  });
+    };
+
+    startScanner();
+
+    // Cleanup al desmontar
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(console.error);
+      }
+    };
+  }, [router]);
 
   const handleStopScanning = () => {
-    setIsScanning(false);
-    router.push('/dashboard');
+    if (scannerRef.current) {
+      scannerRef.current.stop().then(() => {
+        setIsScanning(false);
+        router.push('/dashboard');
+      }).catch(console.error);
+    } else {
+      router.push('/dashboard');
+    }
   };
 
   return (
@@ -80,31 +148,9 @@ export default function ScannerPage() {
           </div>
 
           {/* Video del scanner */}
-          {isScanning && (
-            <div className="relative">
-              <video
-                ref={ref as any}
-                className="w-full"
-                style={{ maxHeight: '500px', objectFit: 'cover' }}
-              />
-              
-              {/* Overlay con marco de escaneo */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-64 h-64 border-4 border-primary-500 rounded-lg relative">
-                  {/* Esquinas animadas */}
-                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
-                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
-                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
-                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg"></div>
-                  
-                  {/* Línea de escaneo animada */}
-                  <div className="absolute inset-0 overflow-hidden">
-                    <div className="scan-line"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          <div className="relative bg-black">
+            <div id="qr-reader" className="w-full"></div>
+          </div>
 
           {/* Resultado o Error */}
           {result && !error && (
@@ -114,8 +160,8 @@ export default function ScannerPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <p className="text-sm font-medium text-green-900">QR escaneado correctamente</p>
-                  <p className="text-xs text-green-700 mt-1 font-mono">{result}</p>
+                  <p className="text-sm font-medium text-green-900">✅ QR escaneado correctamente</p>
+                  <p className="text-xs text-green-700 mt-1 font-mono break-all">{result}</p>
                   <p className="text-xs text-green-600 mt-2">Redirigiendo...</p>
                 </div>
               </div>
@@ -129,7 +175,7 @@ export default function ScannerPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <p className="text-sm font-medium text-red-900">Error</p>
+                  <p className="text-sm font-medium text-red-900">❌ Error</p>
                   <p className="text-xs text-red-700 mt-1">{error}</p>
                   {error.includes('permisos') && (
                     <p className="text-xs text-red-600 mt-2">
@@ -141,14 +187,25 @@ export default function ScannerPage() {
             </div>
           )}
 
+          {/* Estado del scanner */}
+          {isScanning && !result && !error && (
+            <div className="px-6 py-4 bg-blue-50 border-t border-blue-100">
+              <div className="flex items-center space-x-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                <p className="text-sm text-blue-900">🔍 Buscando código QR...</p>
+              </div>
+            </div>
+          )}
+
           {/* Ayuda */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
             <h3 className="text-sm font-medium text-gray-900 mb-2">💡 Consejos:</h3>
             <ul className="text-xs text-gray-600 space-y-1">
-              <li>• Mantén el QR dentro del marco</li>
+              <li>• Mantén el QR dentro del cuadro verde</li>
               <li>• Asegúrate de tener buena iluminación</li>
               <li>• Mantén la cámara estable</li>
               <li>• El QR debe estar enfocado y visible</li>
+              <li>• Acerca o aleja la cámara si no detecta el código</li>
             </ul>
           </div>
 
@@ -164,37 +221,13 @@ export default function ScannerPage() {
         </div>
 
         {/* Nota sobre permisos */}
-        {isScanning && !error && (
+        {!error && (
           <div className="mt-4 text-center text-sm text-gray-500">
-            <p>La primera vez, el navegador te pedirá permiso para acceder a la cámara</p>
+            <p>📱 La primera vez, el navegador te pedirá permiso para acceder a la cámara</p>
+            <p className="mt-1">🔒 Los permisos son necesarios para escanear códigos QR</p>
           </div>
         )}
       </div>
-
-      {/* CSS para animación */}
-      <style jsx>{`
-        @keyframes scan {
-          0% {
-            transform: translateY(-100%);
-          }
-          100% {
-            transform: translateY(100%);
-          }
-        }
-
-        .scan-line {
-          width: 100%;
-          height: 2px;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(59, 130, 246, 0.8),
-            transparent
-          );
-          animation: scan 2s linear infinite;
-          box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-        }
-      `}</style>
     </div>
   );
 }
