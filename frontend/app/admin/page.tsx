@@ -491,18 +491,18 @@ export default function AdminPage() {
                     className="border border-gray-200 rounded-lg hover:shadow-md transition"
                   >
                     {/* Category Header */}
-                    <div className="flex items-center justify-between p-4">
-                      <div className="flex items-center gap-3 flex-1">
+                    <div className="flex items-center justify-between p-4 gap-2">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div
-                          className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-xl"
+                          className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-xl flex-shrink-0"
                           style={{ backgroundColor: category.color || '#3B82F6' }}
                         >
                           {category.icon || '📦'}
                         </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-gray-900">{category.name}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-gray-900 truncate">{category.name}</div>
                           {category.description && (
-                            <div className="text-sm text-gray-600">{category.description}</div>
+                            <div className="text-sm text-gray-600 truncate">{category.description}</div>
                           )}
                           {category._count && (
                             <div className="text-xs text-gray-500 mt-1">
@@ -511,22 +511,22 @@ export default function AdminPage() {
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2 justify-end">
                         <button
                           onClick={() => handleToggleAttributes(category.id)}
-                          className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition"
+                          className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition whitespace-nowrap"
                         >
                           🔧 Atributos
                         </button>
                         <button
                           onClick={() => handleEditCategory(category)}
-                          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
+                          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition whitespace-nowrap"
                         >
                           ✏️ Editar
                         </button>
                         <button
                           onClick={() => handleDeleteCategory(category)}
-                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
+                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition whitespace-nowrap"
                           disabled={category._count && category._count.items > 0}
                         >
                           🗑️ Eliminar
