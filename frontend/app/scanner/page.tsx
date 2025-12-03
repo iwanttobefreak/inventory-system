@@ -2,67 +2,75 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 
 export default function ScannerPage() {
   const router = useRouter();
   const [result, setResult] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isScanning, setIsScanning] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string>('');
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('Cargando...');
+  const scannerRef = useRef<any>(null);
   const isProcessingRef = useRef(false);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
     isMountedRef.current = true;
+    let Html5Qrcode: any = null;
 
-    // Inicializar el scanner
-    const startScanner = async () => {
+    // Cargar la librería dinámicamente
+    const loadScanner = async () => {
+      try {
+        setDebugInfo('Cargando librería...');
+        const html5QrcodeModule = await import('html5-qrcode');
+        Html5Qrcode = html5QrcodeModule.Html5Qrcode;
+        
+        if (!isMountedRef.current) return;
+        
+        setDebugInfo('Librería cargada, inicializando scanner...');
+        await startScanner(Html5Qrcode);
+      } catch (err: any) {
+        console.error('Error al cargar scanner:', err);
+        if (isMountedRef.current) {
+          setError(`Error al cargar scanner: ${err.message}`);
+          setDebugInfo(`Error: ${err.message}`);
+        }
+      }
+    };
+
+    const startScanner = async (Html5QrcodeClass: any) => {
       try {
         // Esperar un momento para que el DOM esté listo
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         if (!isMountedRef.current) return;
 
         setDebugInfo('Inicializando scanner...');
-        const scanner = new Html5Qrcode('qr-reader');
+        const scanner = new Html5QrcodeClass('qr-reader');
         scannerRef.current = scanner;
 
         // Configuración de escaneo optimizada para móviles
         const config = {
-          fps: 10, // Frames por segundo
-          qrbox: { width: 250, height: 250 }, // Área de escaneo
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
-          // Configuración adicional para mejor compatibilidad
-          experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true
-          },
-          rememberLastUsedCamera: true,
         };
 
         // Callback cuando se detecta un QR
         const onScanSuccess = (decodedText: string) => {
-          // Evitar procesar múltiples escaneos del mismo código
-          if (isProcessingRef.current) return;
+          if (isProcessingRef.current || !isMountedRef.current) return;
           isProcessingRef.current = true;
 
           console.log('✅ QR detectado:', decodedText);
           setResult(decodedText);
-          setDebugInfo(`QR detectado: ${decodedText}`);
+          setDebugInfo(`QR: ${decodedText}`);
 
           // Detener el scanner
           scanner.stop().then(() => {
             if (!isMountedRef.current) return;
             setIsScanning(false);
 
-            // Extraer el código del item de la URL del QR
-            // Formato esperado: https://kairoframe.lobo99.info/kf-0001
-            // o http://localhost:3000/kf-0001
-            // o directamente kf-0001
+            // Extraer código del QR
             let itemCode = '';
-            
-            // Intentar diferentes formatos
             const urlMatch = decodedText.match(/\/(kf-\d{4})$/i);
             const directMatch = decodedText.match(/^(kf-\d{4})$/i);
             
@@ -74,64 +82,59 @@ export default function ScannerPage() {
 
             if (itemCode) {
               console.log('✅ Redirigiendo a:', itemCode);
-              // Redirigir al item
               setTimeout(() => {
                 if (isMountedRef.current) {
                   router.push(`/${itemCode}`);
                 }
               }, 500);
             } else {
-              console.error('❌ QR no válido:', decodedText);
-              setError(`QR no válido. Contenido: "${decodedText}". Debe ser un código del inventario (kf-XXXX).`);
-              setDebugInfo(`Error: QR no válido - ${decodedText}`);
-              // Reintentar después de 3 segundos
+              setError(`QR no válido: "${decodedText}". Debe contener un código kf-XXXX`);
+              setDebugInfo(`Error: formato inválido`);
               setTimeout(() => {
                 if (!isMountedRef.current) return;
                 isProcessingRef.current = false;
                 setError('');
                 setResult('');
-                setDebugInfo('');
-                startScanner();
+                setDebugInfo('Reintentando...');
+                startScanner(Html5QrcodeClass);
               }, 3000);
             }
-          }).catch((err) => {
-            console.error('Error al detener scanner:', err);
+          }).catch((err: any) => {
+            console.error('Error al detener:', err);
           });
         };
 
         const onScanFailure = (error: any) => {
-          // No mostrar errores de escaneo fallido (es normal que falle muchas veces)
-          // Solo loguear en consola para debug
-          // console.debug('Scan attempt:', error);
+          // Silenciar errores de escaneo normal
         };
 
-        // Listar cámaras disponibles
+        // Intentar iniciar con diferentes estrategias
         try {
-          const cameras = await Html5Qrcode.getCameras();
-          console.log('📷 Cámaras disponibles:', cameras);
-          setDebugInfo(`Cámaras encontradas: ${cameras.length}`);
+          // Estrategia 1: Listar cámaras
+          const cameras = await Html5QrcodeClass.getCameras();
+          console.log('📷 Cámaras:', cameras);
           
           if (cameras && cameras.length > 0) {
-            // Intentar usar la cámara trasera (environment) primero
-            let cameraId = cameras[cameras.length - 1].id; // Última cámara (normalmente trasera)
+            setDebugInfo(`${cameras.length} cámaras encontradas`);
             
-            // Buscar específicamente la cámara trasera
-            const rearCamera = cameras.find(cam => 
+            // Buscar cámara trasera
+            let cameraId = cameras[cameras.length - 1].id;
+            const rearCamera = cameras.find((cam: any) => 
               cam.label.toLowerCase().includes('back') || 
               cam.label.toLowerCase().includes('rear') ||
-              cam.label.toLowerCase().includes('trasera')
+              cam.label.toLowerCase().includes('trasera') ||
+              cam.label.toLowerCase().includes('environment')
             );
             
             if (rearCamera) {
               cameraId = rearCamera.id;
-              console.log('📷 Usando cámara trasera:', rearCamera.label);
-              setDebugInfo(`Usando: ${rearCamera.label}`);
+              setDebugInfo(`Usando: ${rearCamera.label.substring(0, 30)}...`);
             } else {
-              console.log('📷 Usando cámara:', cameras[cameras.length - 1].label);
-              setDebugInfo(`Usando: ${cameras[cameras.length - 1].label}`);
+              setDebugInfo(`Usando: ${cameras[cameras.length - 1].label.substring(0, 30)}...`);
             }
 
             await scanner.start(cameraId, config, onScanSuccess, onScanFailure);
+            
             if (isMountedRef.current) {
               setIsScanning(true);
               setDebugInfo('✅ Scanner activo');
@@ -139,68 +142,71 @@ export default function ScannerPage() {
           } else {
             throw new Error('No se encontraron cámaras');
           }
-        } catch (cameraError) {
-          console.warn('⚠️ Error al listar cámaras, intentando con facingMode:', cameraError);
+        } catch (cameraError: any) {
+          console.warn('⚠️ Error listando cámaras:', cameraError);
           setDebugInfo('Intentando con facingMode...');
           
-          // Fallback: Intentar con facingMode
+          // Estrategia 2: facingMode environment
           try {
             await scanner.start(
-              { facingMode: 'environment' }, // Cámara trasera
+              { facingMode: 'environment' },
               config,
               onScanSuccess,
               onScanFailure
             );
+            
             if (isMountedRef.current) {
               setIsScanning(true);
-              setDebugInfo('✅ Scanner activo (cámara trasera)');
+              setDebugInfo('✅ Scanner activo (trasera)');
             }
-          } catch (envErr) {
-            console.warn('⚠️ Error con cámara trasera, intentando frontal:', envErr);
+          } catch (envErr: any) {
+            console.warn('⚠️ Error con trasera:', envErr);
             setDebugInfo('Intentando cámara frontal...');
             
-            // Último intento: cámara frontal
+            // Estrategia 3: facingMode user
             try {
               await scanner.start(
-                { facingMode: 'user' }, // Cámara frontal
+                { facingMode: 'user' },
                 config,
                 onScanSuccess,
                 onScanFailure
               );
+              
               if (isMountedRef.current) {
                 setIsScanning(true);
-                setDebugInfo('✅ Scanner activo (cámara frontal)');
+                setDebugInfo('✅ Scanner activo (frontal)');
               }
-            } catch (userErr) {
-              throw new Error('No se pudo acceder a ninguna cámara');
+            } catch (userErr: any) {
+              throw new Error(`No se pudo acceder a la cámara: ${userErr.message}`);
             }
           }
         }
       } catch (err: any) {
-        console.error('❌ Error al iniciar scanner:', err);
+        console.error('❌ Error fatal:', err);
         if (isMountedRef.current) {
-          setError(`Error al acceder a la cámara: ${err.message || 'Verifica los permisos'}`);
-          setDebugInfo(`Error: ${err.message}`);
+          setError(`Error: ${err.message || 'No se pudo iniciar el scanner'}`);
+          setDebugInfo(`Error fatal: ${err.message}`);
         }
       }
     };
 
-    startScanner();
+    loadScanner();
 
-    // Cleanup al desmontar
+    // Cleanup
     return () => {
       isMountedRef.current = false;
       if (scannerRef.current) {
-        scannerRef.current.stop()
-          .then(() => {
-            console.log('Scanner detenido correctamente');
-            if (scannerRef.current) {
-              scannerRef.current.clear();
-            }
-          })
-          .catch((err) => {
-            console.error('Error al detener scanner:', err);
-          });
+        try {
+          scannerRef.current.stop()
+            .then(() => {
+              if (scannerRef.current) {
+                scannerRef.current.clear();
+              }
+            })
+            .catch((err: any) => console.error('Error en cleanup:', err));
+        } catch (err) {
+          console.error('Error en cleanup:', err);
+        }
       }
     };
   }, [router]);
@@ -212,7 +218,7 @@ export default function ScannerPage() {
           setIsScanning(false);
           router.push('/dashboard');
         })
-        .catch((err) => {
+        .catch((err: any) => {
           console.error('Error al detener:', err);
           router.push('/dashboard');
         });
@@ -246,6 +252,16 @@ export default function ScannerPage() {
 
       {/* Scanner */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Debug info siempre visible */}
+        {debugInfo && (
+          <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <span className="text-blue-600 text-sm">🔧</span>
+              <p className="text-sm text-blue-900 font-mono break-all">{debugInfo}</p>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           {/* Instrucciones */}
           <div className="bg-primary-50 border-b border-primary-100 px-6 py-4">
