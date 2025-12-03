@@ -13,10 +13,6 @@ export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  // Debug: mostrar la URL de la API
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-  console.log('API URL configurada:', apiUrl);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
