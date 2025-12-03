@@ -73,41 +73,41 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
                 📹 Inventario Audiovisual
               </h1>
               <p className="text-sm text-gray-600">Bienvenido, {user?.name}</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => router.push('/scanner')}
-                className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
+                className="flex-1 min-w-[140px] px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition text-sm whitespace-nowrap"
               >
                 📱 Escanear QR
               </button>
               <button
                 onClick={() => router.push('/new')}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                className="flex-1 min-w-[140px] px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-sm whitespace-nowrap"
               >
                 ➕ Nuevo Item
               </button>
               <button
                 onClick={() => router.push('/labels')}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+                className="flex-1 min-w-[140px] px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition text-sm whitespace-nowrap"
               >
                 🏷️ Generar Etiquetas
               </button>
               <button
                 onClick={() => router.push('/admin')}
-                className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition"
+                className="flex-1 min-w-[140px] px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition text-sm whitespace-nowrap"
               >
                 ⚙️ Administración
               </button>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                className="flex-1 min-w-[140px] px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition text-sm whitespace-nowrap"
               >
                 Cerrar sesión
               </button>
