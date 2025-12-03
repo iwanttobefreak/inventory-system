@@ -30,24 +30,56 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
-# 1. Verificar que Docker está instalado
+# Función para detectar el comando de compose correcto
+detect_compose_command() {
+    # Probar docker compose (nuevo, sin guion)
+    if docker compose version &> /dev/null; then
+        echo "docker compose"
+        return 0
+    fi
+    
+    # Probar docker-compose (antiguo, con guion)
+    if command -v docker-compose &> /dev/null; then
+        echo "docker-compose"
+        return 0
+    fi
+    
+    # Probar podman-compose
+    if command -v podman-compose &> /dev/null; then
+        echo "podman-compose"
+        return 0
+    fi
+    
+    return 1
+}
+
+# 1. Verificar que Docker/Podman está instalado
 echo "📦 Verificando dependencias..."
-if ! command -v docker &> /dev/null; then
-    print_error "Docker no está instalado. Instálalo desde: https://docs.docker.com/get-docker/"
+if ! command -v docker &> /dev/null && ! command -v podman &> /dev/null; then
+    print_error "Ni Docker ni Podman están instalados."
+    echo ""
+    echo "Instala uno de los siguientes:"
+    echo "  - Docker: https://docs.docker.com/get-docker/"
+    echo "  - Podman: https://podman.io/getting-started/installation"
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
-    print_error "Docker Compose no está instalado. Instálalo desde: https://docs.docker.com/compose/install/"
+# Detectar el comando de compose
+COMPOSE_CMD=$(detect_compose_command)
+if [ $? -ne 0 ]; then
+    print_error "No se encontró docker compose, docker-compose ni podman-compose"
+    echo ""
+    echo "Instala Docker Compose desde: https://docs.docker.com/compose/install/"
     exit 1
 fi
 
-print_success "Docker y Docker Compose están instalados"
+print_success "Contenedor engine detectado"
+print_success "Usando comando: $COMPOSE_CMD"
 echo ""
 
 # 2. Detener contenedores si existen
 echo "⏹️  Deteniendo contenedores existentes (si los hay)..."
-docker-compose down 2>/dev/null || true
+$COMPOSE_CMD down 2>/dev/null || true
 print_success "Contenedores detenidos"
 echo ""
 
@@ -116,7 +148,7 @@ echo ""
 # 6. Construir e iniciar contenedores
 echo "🏗️  Construyendo e iniciando contenedores..."
 echo "Esto puede tardar varios minutos la primera vez..."
-docker-compose up -d --build
+$COMPOSE_CMD up -d --build
 
 if [ $? -eq 0 ]; then
     print_success "Contenedores iniciados correctamente"
@@ -132,7 +164,7 @@ sleep 10
 
 # 8. Verificar que los contenedores están corriendo
 echo "🔍 Verificando estado de los contenedores..."
-docker-compose ps
+$COMPOSE_CMD ps
 
 echo ""
 echo "=============================================="
@@ -149,10 +181,10 @@ echo "  2. Haz clic en 'Registrarse'"
 echo "  3. Crea tu primer usuario"
 echo ""
 echo "📚 COMANDOS ÚTILES:"
-echo "  Ver logs:      docker-compose logs -f"
-echo "  Detener:       docker-compose down"
-echo "  Reiniciar:     docker-compose restart"
-echo "  Ver estado:    docker-compose ps"
+echo "  Ver logs:      $COMPOSE_CMD logs -f"
+echo "  Detener:       $COMPOSE_CMD down"
+echo "  Reiniciar:     $COMPOSE_CMD restart"
+echo "  Ver estado:    $COMPOSE_CMD ps"
 echo ""
 echo "📖 MÁS AYUDA:"
 echo "  README.md - Documentación general"

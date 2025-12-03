@@ -1,5 +1,15 @@
 # 📝 Guía Rápida de Comandos
 
+> **💡 Nota sobre comandos de compose:**  
+> Los ejemplos usan `docker-compose`, pero puedes usar según tu sistema:
+> - `docker compose` (Docker Desktop moderno, sin guion)
+> - `docker-compose` (Docker Compose v1, con guion)  
+> - `podman-compose` (si usas Podman)
+>
+> Los scripts `install.sh` y `start.sh` detectan automáticamente el comando correcto.
+
+---
+
 ## 👥 Gestión de Usuarios
 
 ### ✅ Crear Usuario

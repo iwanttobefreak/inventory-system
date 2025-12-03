@@ -32,14 +32,19 @@ Sistema completo de gestión de inventario para productoras audiovisuales con c�
 - **qrcode.react** - Visualización de QR
 
 ### DevOps
-- **Docker** + **Docker Compose** - Containerización
+- **Docker / Podman** - Containerización (compatible con ambos)
+- **Docker Compose** - Orquestación de contenedores
 - **PostgreSQL** - Base de datos en contenedor
+- **Detección automática** - Los scripts detectan tu motor de contenedores
 
 ## 📋 Requisitos Previos
 
-- **Docker Desktop** O **Podman** instalado (compatible con ambos)
+- **Docker Desktop** O **Podman** instalado (✅ compatible con ambos)
 - Docker Compose instalado (viene con Docker Desktop)
 - Puerto 3000, 4000 y 5432 disponibles
+
+> 💡 **Nota**: El sistema detecta automáticamente si tienes Docker o Podman y usa el comando correcto.  
+> Ver [DOCKER_PODMAN_COMPATIBILITY.md](DOCKER_PODMAN_COMPATIBILITY.md) para más detalles.
 
 ### Instalación de Docker o Podman
 

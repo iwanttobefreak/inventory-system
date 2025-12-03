@@ -9,51 +9,60 @@ echo "🚀 Sistema de Inventario Audiovisual"
 echo "===================================="
 echo ""
 
-# Función para detectar el motor de contenedores
-detect_container_engine() {
-    if command -v docker &> /dev/null && docker info &> /dev/null; then
-        echo "docker"
-    elif command -v podman &> /dev/null && podman info &> /dev/null; then
-        echo "podman"
-    else
-        echo "none"
+# Función para detectar el comando de compose correcto
+detect_compose_command() {
+    # Probar docker compose (nuevo, sin guion)
+    if docker compose version &> /dev/null; then
+        echo "docker compose"
+        return 0
     fi
+    
+    # Probar docker-compose (antiguo, con guion)
+    if command -v docker-compose &> /dev/null; then
+        echo "docker-compose"
+        return 0
+    fi
+    
+    # Probar podman-compose
+    if command -v podman-compose &> /dev/null; then
+        echo "podman-compose"
+        return 0
+    fi
+    
+    return 1
 }
 
-# Detectar motor
-ENGINE=$(detect_container_engine)
+# Detectar el motor de contenedores
+if command -v docker &> /dev/null && docker info &> /dev/null; then
+    ENGINE="docker"
+    echo "✅ Usando Docker"
+elif command -v podman &> /dev/null; then
+    ENGINE="podman"
+    echo "✅ Usando Podman"
+    # Intentar arrancar la máquina de Podman si es necesario
+    if ! podman info &> /dev/null; then
+        echo "🔄 Arrancando máquina de Podman..."
+        podman machine start 2>/dev/null || true
+    fi
+else
+    echo "❌ Error: No se encontró Docker ni Podman instalado"
+    echo ""
+    echo "Por favor instala uno de los siguientes:"
+    echo "  - Docker Desktop: https://www.docker.com/products/docker-desktop"
+    echo "  - Podman: https://podman.io/getting-started/installation"
+    exit 1
+fi
 
-case $ENGINE in
-    docker)
-        echo "✅ Usando Docker"
-        COMPOSE_CMD="docker-compose"
-        ;;
-    podman)
-        echo "✅ Usando Podman"
-        # Verificar si podman-compose está instalado
-        if command -v podman-compose &> /dev/null; then
-            COMPOSE_CMD="podman-compose"
-        else
-            echo "📦 podman-compose no encontrado, usando docker-compose con Podman socket"
-            # Obtener la ruta del socket de Podman
-            PODMAN_SOCK=$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}' 2>/dev/null || echo "")
-            if [ -n "$PODMAN_SOCK" ]; then
-                export DOCKER_HOST="unix://${PODMAN_SOCK}"
-                echo "   Configurado DOCKER_HOST=${DOCKER_HOST}"
-            fi
-            COMPOSE_CMD="docker-compose"
-        fi
-        ;;
-    none)
-        echo "❌ Error: No se encontró Docker ni Podman instalado"
-        echo ""
-        echo "Por favor instala uno de los siguientes:"
-        echo "  - Docker Desktop: https://www.docker.com/products/docker-desktop"
-        echo "  - Podman: https://podman.io/getting-started/installation"
-        exit 1
-        ;;
-esac
+# Detectar el comando de compose
+COMPOSE_CMD=$(detect_compose_command)
+if [ $? -ne 0 ]; then
+    echo "❌ Error: No se encontró docker compose, docker-compose ni podman-compose"
+    echo ""
+    echo "Instala Docker Compose desde: https://docs.docker.com/compose/install/"
+    exit 1
+fi
 
+echo "📦 Usando comando: $COMPOSE_CMD"
 echo ""
 echo "📋 Comandos disponibles:"
 echo "  ./start.sh up      - Levantar servicios"
