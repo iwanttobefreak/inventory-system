@@ -110,34 +110,90 @@ export default function ScannerPage() {
 
         // Intentar iniciar con diferentes estrategias
         try {
-          // Estrategia 1: Listar cámaras
+          // Estrategia 1: Listar cámaras y probar en orden inteligente
           const cameras = await Html5QrcodeClass.getCameras();
-          console.log('📷 Cámaras:', cameras);
+          console.log('📷 Cámaras detectadas:', cameras);
           
           if (cameras && cameras.length > 0) {
-            setDebugInfo(`${cameras.length} cámaras encontradas`);
+            setDebugInfo(`${cameras.length} cámara${cameras.length > 1 ? 's' : ''} encontrada${cameras.length > 1 ? 's' : ''}`);
             
-            // Buscar cámara trasera
-            let cameraId = cameras[cameras.length - 1].id;
-            const rearCamera = cameras.find((cam: any) => 
-              cam.label.toLowerCase().includes('back') || 
-              cam.label.toLowerCase().includes('rear') ||
-              cam.label.toLowerCase().includes('trasera') ||
-              cam.label.toLowerCase().includes('environment')
-            );
+            // Priorizar cámaras en este orden:
+            // 1. Las que contengan "back" y "0" (cámara principal trasera)
+            // 2. Las que contengan "back" solamente
+            // 3. La última de la lista (suele ser trasera)
+            let cameraId = null;
+            let selectedCamera = null;
             
-            if (rearCamera) {
-              cameraId = rearCamera.id;
-              setDebugInfo(`Usando: ${rearCamera.label.substring(0, 30)}...`);
-            } else {
-              setDebugInfo(`Usando: ${cameras[cameras.length - 1].label.substring(0, 30)}...`);
+            // Buscar cámara principal trasera (back + 0)
+            selectedCamera = cameras.find((cam: any) => {
+              const label = cam.label.toLowerCase();
+              return (label.includes('back') || label.includes('rear') || label.includes('trasera')) &&
+                     (label.includes('0') || label.includes('main') || label.includes('wide') || label.includes('principal'));
+            });
+            
+            // Si no, buscar cualquier cámara trasera
+            if (!selectedCamera) {
+              selectedCamera = cameras.find((cam: any) => {
+                const label = cam.label.toLowerCase();
+                return label.includes('back') || label.includes('rear') || 
+                       label.includes('trasera') || label.includes('environment');
+              });
             }
-
-            await scanner.start(cameraId, config, onScanSuccess, onScanFailure);
             
-            if (isMountedRef.current) {
-              setIsScanning(true);
-              setDebugInfo('✅ Scanner activo');
+            // Si no, usar la última (suele ser trasera)
+            if (!selectedCamera) {
+              selectedCamera = cameras[cameras.length - 1];
+            }
+            
+            cameraId = selectedCamera.id;
+            const cameraLabel = selectedCamera.label.length > 40 
+              ? selectedCamera.label.substring(0, 40) + '...' 
+              : selectedCamera.label;
+            
+            console.log('📷 Cámara seleccionada:', selectedCamera);
+            setDebugInfo(`Usando: ${cameraLabel}`);
+
+            try {
+              await scanner.start(cameraId, config, onScanSuccess, onScanFailure);
+              
+              if (isMountedRef.current) {
+                setIsScanning(true);
+                setDebugInfo(`✅ Scanner activo - ${cameraLabel}`);
+              }
+            } catch (startError: any) {
+              console.error('❌ Error con cámara seleccionada:', startError);
+              
+              // Si falla, intentar con otras cámaras
+              setDebugInfo('Cámara falló, probando otras...');
+              let started = false;
+              
+              for (let i = 0; i < cameras.length && !started; i++) {
+                if (cameras[i].id === cameraId) continue; // Saltar la que ya probamos
+                
+                try {
+                  console.log(`🔄 Probando cámara ${i}:`, cameras[i].label);
+                  setDebugInfo(`Probando: ${cameras[i].label.substring(0, 30)}...`);
+                  
+                  await scanner.start(cameras[i].id, config, onScanSuccess, onScanFailure);
+                  
+                  if (isMountedRef.current) {
+                    setIsScanning(true);
+                    const label = cameras[i].label.length > 40 
+                      ? cameras[i].label.substring(0, 40) + '...' 
+                      : cameras[i].label;
+                    setDebugInfo(`✅ Scanner activo - ${label}`);
+                    started = true;
+                  }
+                  break;
+                } catch (err) {
+                  console.warn(`⚠️ Falló cámara ${i}:`, err);
+                  continue;
+                }
+              }
+              
+              if (!started) {
+                throw new Error('No se pudo iniciar ninguna cámara');
+              }
             }
           } else {
             throw new Error('No se encontraron cámaras');
