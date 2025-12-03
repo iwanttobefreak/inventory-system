@@ -83,3 +83,14 @@ export const categoryAttributesAPI = {
   update: (categoryId: string, id: string, data: any) => api.put(`/categories/${categoryId}/attributes/${id}`, data),
   delete: (categoryId: string, id: string) => api.delete(`/categories/${categoryId}/attributes/${id}`),
 };
+
+// Users
+export const usersAPI = {
+  getAll: () => api.get('/users'),
+  create: (data: any) => api.post('/users', data),
+  update: (id: string, data: any) => api.put(`/users/${id}`, data),
+  delete: (id: string) => api.delete(`/users/${id}`),
+  updatePassword: (id: string, newPassword: string) => api.put(`/users/${id}/password`, { newPassword }),
+  updateMyPassword: (currentPassword: string, newPassword: string) => 
+    api.put('/users/me/password', { currentPassword, newPassword }),
+};

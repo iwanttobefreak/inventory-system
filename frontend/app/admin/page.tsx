@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import { categoriesAPI, categoryAttributesAPI } from '@/lib/api';
+import { categoriesAPI, categoryAttributesAPI, usersAPI } from '@/lib/api';
 
 interface Category {
   id: string;
@@ -23,6 +23,15 @@ interface CategoryAttribute {
   options?: string;
   required: boolean;
   order: number;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'USER';
+  createdAt: string;
+  updatedAt: string;
 }
 
 const ESTADOS = [
@@ -78,12 +87,23 @@ export default function AdminPage() {
   const [attributeRequired, setAttributeRequired] = useState(false);
   const [attributeOrder, setAttributeOrder] = useState(0);
 
+  // Estados para usuarios
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [userPassword, setUserPassword] = useState('');
+  const [userRole, setUserRole] = useState<'ADMIN' | 'USER'>('USER');
+
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push('/login');
       return;
     }
     loadCategories();
+    loadUsers();
   }, []);
 
   const loadCategories = async () => {
@@ -302,6 +322,105 @@ export default function AdminPage() {
     } catch (error: any) {
       console.error('Error eliminando atributo:', error);
       const message = error.response?.data?.error || 'Error al eliminar el atributo';
+      alert(`❌ ${message}`);
+    }
+  };
+
+  // ===== FUNCIONES DE USUARIOS =====
+
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const response = await usersAPI.getAll();
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Error cargando usuarios:', error);
+      alert('Error al cargar los usuarios');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleSaveUser = async () => {
+    if (!userName.trim() || !userEmail.trim()) {
+      alert('El nombre y email son obligatorios');
+      return;
+    }
+
+    if (!editingUser && !userPassword.trim()) {
+      alert('La contraseña es obligatoria para nuevos usuarios');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const data: any = {
+        name: userName.trim(),
+        email: userEmail.trim(),
+        role: userRole,
+      };
+
+      if (!editingUser) {
+        data.password = userPassword;
+      }
+
+      if (editingUser) {
+        // Actualizar
+        await usersAPI.update(editingUser.id, { name: data.name, role: data.role });
+        alert('✅ Usuario actualizado exitosamente');
+        
+        // Si hay nueva contraseña, actualizarla por separado
+        if (userPassword.trim()) {
+          await usersAPI.updatePassword(editingUser.id, userPassword);
+          alert('✅ Contraseña actualizada');
+        }
+      } else {
+        // Crear
+        await usersAPI.create(data);
+        alert('✅ Usuario creado exitosamente');
+      }
+
+      await loadUsers();
+      handleCancelUser();
+    } catch (error: any) {
+      console.error('Error guardando usuario:', error);
+      const message = error.response?.data?.error || 'Error al guardar el usuario';
+      alert(`❌ ${message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setUserName(user.name);
+    setUserEmail(user.email);
+    setUserPassword('');
+    setUserRole(user.role);
+    setShowUserForm(true);
+  };
+
+  const handleCancelUser = () => {
+    setShowUserForm(false);
+    setEditingUser(null);
+    setUserName('');
+    setUserEmail('');
+    setUserPassword('');
+    setUserRole('USER');
+  };
+
+  const handleDeleteUser = async (user: User) => {
+    if (!confirm(`¿Estás seguro de eliminar al usuario "${user.name}" (${user.email})?`)) {
+      return;
+    }
+
+    try {
+      await usersAPI.delete(user.id);
+      alert('✅ Usuario eliminado exitosamente');
+      await loadUsers();
+    } catch (error: any) {
+      console.error('Error eliminando usuario:', error);
+      const message = error.response?.data?.error || 'Error al eliminar el usuario';
       alert(`❌ ${message}`);
     }
   };
@@ -778,6 +897,163 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Panel de Usuarios */}
+        <div className="mt-8">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-900">👥 Gestión de Usuarios</h2>
+              <button
+                onClick={() => setShowUserForm(true)}
+                className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition text-sm"
+              >
+                + Nuevo Usuario
+              </button>
+            </div>
+
+            {/* Formulario de Usuario */}
+            {showUserForm && (
+              <div className="mb-6 p-4 border-2 border-primary-200 rounded-lg bg-primary-50">
+                <h3 className="font-bold text-gray-900 mb-4">
+                  {editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
+                </h3>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nombre *
+                      </label>
+                      <input
+                        type="text"
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        placeholder="Nombre completo"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        value={userEmail}
+                        onChange={(e) => setUserEmail(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        placeholder="email@ejemplo.com"
+                        disabled={!!editingUser}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contraseña {editingUser ? '(dejar vacío para no cambiar)' : '*'}
+                      </label>
+                      <input
+                        type="password"
+                        value={userPassword}
+                        onChange={(e) => setUserPassword(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        placeholder={editingUser ? 'Nueva contraseña (opcional)' : 'Contraseña'}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Rol *
+                      </label>
+                      <select
+                        value={userRole}
+                        onChange={(e) => setUserRole(e.target.value as 'ADMIN' | 'USER')}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      >
+                        <option value="USER">Usuario</option>
+                        <option value="ADMIN">Administrador</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={handleSaveUser}
+                      disabled={saving || !userName.trim() || !userEmail.trim()}
+                      className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition disabled:bg-gray-400"
+                    >
+                      {saving ? 'Guardando...' : editingUser ? 'Actualizar' : 'Crear'}
+                    </button>
+                    <button
+                      onClick={handleCancelUser}
+                      disabled={saving}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Lista de Usuarios */}
+            {loadingUsers ? (
+              <div className="text-center py-8 text-gray-500">Cargando usuarios...</div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <div className="text-4xl mb-2">👥</div>
+                <p>No hay usuarios creados</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {users.map((user) => (
+                  <div
+                    key={user.id}
+                    className="border border-gray-200 rounded-lg hover:shadow-md transition p-4"
+                  >
+                    {/* Fila 1: Info del Usuario */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">{user.name}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            user.role === 'ADMIN' 
+                              ? 'bg-purple-100 text-purple-700' 
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {user.role === 'ADMIN' ? '👑 Admin' : '👤 Usuario'}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">{user.email}</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Creado: {new Date(user.createdAt).toLocaleDateString('es-ES')}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Fila 2: Botones */}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => handleEditUser(user)}
+                        className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition whitespace-nowrap"
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user)}
+                        className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition whitespace-nowrap"
+                      >
+                        🗑️ Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
