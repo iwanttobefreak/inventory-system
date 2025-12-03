@@ -109,17 +109,6 @@ export default function LoginPage() {
           <div className="text-center text-sm text-gray-600 mt-4">
             <p>Credenciales de prueba:</p>
             <p className="font-mono text-xs mt-1">admin@productora.com / admin123</p>
-            
-            {/* Debug info - se puede eliminar después */}
-            <details className="mt-3 text-xs text-left">
-              <summary className="cursor-pointer text-gray-400 hover:text-gray-600">
-                🔧 Info de Debug
-              </summary>
-              <div className="mt-2 p-2 bg-gray-50 rounded border border-gray-200">
-                <p><strong>API URL:</strong> {apiUrl}</p>
-                <p><strong>Window Location:</strong> {typeof window !== 'undefined' ? window.location.href : 'N/A'}</p>
-              </div>
-            </details>
           </div>
         </form>
       </div>
