@@ -32,6 +32,7 @@ export default function LabelsPage() {
   const [totalLabels, setTotalLabels] = useState(10);
   const [generating, setGenerating] = useState(false);
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+  const [separationPercentage, setSeparationPercentage] = useState(20); // % del ancho para separación
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -78,7 +79,7 @@ export default function LabelsPage() {
     }, 500); // Debounce de 500ms
 
     return () => clearTimeout(timer);
-  }, [selectedSize, customWidth, customHeight, rangeInput]);
+  }, [selectedSize, customWidth, customHeight, rangeInput, separationPercentage]);
 
   // Generar código con formato kf-XXXX
   const formatCode = (num: number): string => {
@@ -149,9 +150,13 @@ export default function LabelsPage() {
         pdf.setLineWidth(0.1);
         pdf.rect(x, y, labelWidth, labelHeight);
 
-        // Área del logo (izquierda, ~40% del ancho)
-        const logoAreaWidth = labelWidth * 0.4;
+        // Calcular anchos de las tres áreas basados en el porcentaje de separación
+        const separationWidth = labelWidth * (separationPercentage / 100);
+        const remainingWidth = labelWidth - separationWidth;
+        const logoAreaWidth = remainingWidth * 0.5; // 50% del espacio restante
+        const qrAreaWidth = remainingWidth * 0.5;   // 50% del espacio restante
         
+        // Área del logo (izquierda)
         // Logo cuadrado: calcular tamaño óptimo - MÁRGENES MÍNIMOS
         const logoSize = Math.min(logoAreaWidth - 1, labelHeight - 1); // Margen mínimo de 0.5mm
         const logoX = x + 0.5 + (logoAreaWidth - 1 - logoSize) / 2; // Centrar en su área con margen mínimo
@@ -164,9 +169,8 @@ export default function LabelsPage() {
           console.warn('Error añadiendo logo:', error);
         }
 
-        // Área del QR y código (derecha, ~40% del ancho)
-        const qrAreaWidth = labelWidth * 0.4;
-        const qrAreaX = x + labelWidth - qrAreaWidth;
+        // Área del QR (derecha, después de la separación)
+        const qrAreaX = x + logoAreaWidth + separationWidth;
         
         // QR arriba - ocupar 70% del espacio vertical - MÁRGENES MÍNIMOS
         const qrSize = Math.min(qrAreaWidth - 1, (labelHeight * 0.7) - 1); // Margen mínimo
@@ -387,6 +391,30 @@ export default function LabelsPage() {
               </ul>
             </div>
 
+            {/* Porcentaje de Separación */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Separación entre Logo y QR: {separationPercentage}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="40"
+                value={separationPercentage}
+                onChange={(e) => setSeparationPercentage(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>0% (Sin espacio)</span>
+                <span>20% (Balanceado)</span>
+                <span>40% (Máximo)</span>
+              </div>
+              <p className="mt-2 text-xs text-gray-600">
+                Controla el espacio en blanco entre el logo y el código QR.
+                0% = sin separación, 40% = máxima separación.
+              </p>
+            </div>
+
             {/* Información */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <h3 className="font-medium text-blue-900 mb-2">📊 Resumen</h3>
@@ -455,13 +483,24 @@ export default function LabelsPage() {
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <h4 className="font-medium text-green-900 text-sm mb-1">✅ Distribución</h4>
+                <h4 className="font-medium text-green-900 text-sm mb-1">✅ Distribución Actual</h4>
                 <p className="text-xs text-green-800">
-                  • Logo: 40% izquierda<br />
-                  • Espacio libre: 20% centro<br />
+                  {separationPercentage === 0 ? (
+                    <>
+                      • Logo: 50% izquierda<br />
+                      • QR + Código: 50% derecha<br />
+                      • (Sin espacio de separación)
+                    </>
+                  ) : (
+                    <>
+                      • Logo: {((100 - separationPercentage) / 2).toFixed(0)}% izquierda<br />
+                      • Separación: {separationPercentage}% centro<br />
+                      • QR + Código: {((100 - separationPercentage) / 2).toFixed(0)}% derecha<br />
+                    </>
+                  )}
+                  <br />
                   • QR: arriba (70% vertical)<br />
-                  • Código: debajo QR (30% vertical)<br />
-                  • (Código horizontal debajo del QR)
+                  • Código: debajo QR (30% vertical)
                 </p>
               </div>
             </div>
