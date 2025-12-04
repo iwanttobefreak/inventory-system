@@ -66,6 +66,16 @@ export const itemsAPI = {
   update: (code: string, data: any) => api.put(`/items/${code}`, data),
   delete: (code: string) => api.delete(`/items/${code}`),
   getQR: (code: string) => api.get(`/items/${code}/qr`),
+  uploadImage: (code: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    return api.post(`/items/${code}/image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  deleteImage: (code: string) => api.delete(`/items/${code}/image`),
 };
 
 // Categories

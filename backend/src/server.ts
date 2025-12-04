@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import authRoutes from './routes/auth';
 import itemRoutes from './routes/items';
 import categoryRoutes from './routes/categories';
@@ -17,6 +18,9 @@ const PORT = process.env.PORT || 4000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Servir archivos estáticos de uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Rutas
 app.get('/health', (req: Request, res: Response) => {

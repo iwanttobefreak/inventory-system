@@ -3,9 +3,45 @@ import { PrismaClient } from '@prisma/client';
 import QRCode from 'qrcode';
 import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+// Configuración de multer para upload de imágenes
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../../uploads/items');
+    // Crear directorio si no existe
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const code = req.params.code;
+    const ext = path.extname(file.originalname);
+    cb(null, `${code}-${Date.now()}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB máximo
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (extname && mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, webp)'));
+    }
+  }
+});
 
 // Función para generar el siguiente código kf-XXXX
 async function getNextCode(): Promise<string> {
@@ -293,6 +329,101 @@ router.get('/:code/qr', authenticate, async (req: AuthRequest, res: Response) =>
 
     res.json({ qrCode: qrCodeDataUrl });
   } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/items/:code/image - Subir imagen para un item
+router.post('/:code/image', authenticate, upload.single('image'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { code } = req.params;
+
+    // Verificar que el item existe
+    const item = await prisma.item.findUnique({
+      where: { code },
+    });
+
+    if (!item) {
+      // Si se subió archivo, eliminarlo
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    // Si no se subió archivo
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    // Si el item ya tenía una imagen, eliminar la anterior
+    if (item.imageUrl) {
+      const oldImagePath = path.join(__dirname, '../../uploads/items', path.basename(item.imageUrl));
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
+
+    // Generar URL de la imagen
+    const imageUrl = `/uploads/items/${req.file.filename}`;
+
+    // Actualizar item con la nueva imagen
+    const updatedItem = await prisma.item.update({
+      where: { code },
+      data: { imageUrl },
+      include: {
+        category: true,
+        location: true,
+      },
+    });
+
+    res.json(updatedItem);
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    // Si hay error, eliminar archivo subido
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/items/:code/image - Eliminar imagen de un item
+router.delete('/:code/image', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { code } = req.params;
+
+    const item = await prisma.item.findUnique({
+      where: { code },
+    });
+
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    if (!item.imageUrl) {
+      return res.status(400).json({ error: 'Item has no image' });
+    }
+
+    // Eliminar archivo físico
+    const imagePath = path.join(__dirname, '../../uploads/items', path.basename(item.imageUrl));
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+
+    // Actualizar item quitando la imagen
+    const updatedItem = await prisma.item.update({
+      where: { code },
+      data: { imageUrl: null },
+      include: {
+        category: true,
+        location: true,
+      },
+    });
+
+    res.json(updatedItem);
+  } catch (error) {
+    console.error('Error deleting image:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

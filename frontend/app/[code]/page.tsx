@@ -33,6 +33,11 @@ export default function ItemCodePage() {
   const [notFound, setNotFound] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isClient, setIsClient] = useState(false); // Para evitar problemas de hidratación SSR
+  
+  // Estados para imagen
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Form state para crear/editar
   const [formData, setFormData] = useState({
@@ -225,6 +230,37 @@ export default function ItemCodePage() {
     }));
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar que sea una imagen
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor selecciona un archivo de imagen');
+        return;
+      }
+      
+      // Validar tamaño (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no debe superar los 5MB');
+        return;
+      }
+      
+      setSelectedImage(file);
+      
+      // Crear preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -237,19 +273,39 @@ export default function ItemCodePage() {
         attributes: Object.keys(formData.attributes).length > 0 ? formData.attributes : undefined,
       };
 
+      let savedItem;
       if (notFound) {
         // Crear nuevo item
         const res = await itemsAPI.create(submitData);
-        setItem(res.data);
+        savedItem = res.data;
+        setItem(savedItem);
         setNotFound(false);
         setIsEditing(false);
-        alert('✅ Item creado exitosamente');
       } else {
         // Actualizar item existente
         const res = await itemsAPI.update(code, submitData);
-        setItem(res.data);
+        savedItem = res.data;
+        setItem(savedItem);
         setIsEditing(false);
-        alert('✅ Item actualizado exitosamente');
+      }
+
+      // Si hay imagen seleccionada, subirla
+      if (selectedImage) {
+        setUploadingImage(true);
+        try {
+          const imageRes = await itemsAPI.uploadImage(code, selectedImage);
+          setItem(imageRes.data);
+          setSelectedImage(null);
+          setImagePreview(null);
+          alert('✅ Item y foto guardados exitosamente');
+        } catch (imageError: any) {
+          console.error('Error uploading image:', imageError);
+          alert('⚠️ Item guardado pero hubo un error al subir la imagen');
+        } finally {
+          setUploadingImage(false);
+        }
+      } else {
+        alert('✅ Item guardado exitosamente');
       }
     } catch (error: any) {
       console.error('Error saving item:', error);
@@ -573,6 +629,48 @@ export default function ItemCodePage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  📷 Imagen del artículo
+                </label>
+                {imagePreview ? (
+                  <div className="relative">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-full h-64 object-cover rounded-lg border-2 border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 bg-red-500 text-white px-3 py-2 rounded-full hover:bg-red-600 transition shadow-lg"
+                    >
+                      🗑️ Eliminar
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg className="w-12 h-12 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="mb-2 text-sm text-gray-600 font-medium">
+                        📷 Click para subir imagen
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        PNG, JPG, GIF, WEBP (máx. 5MB)
+                      </p>
+                    </div>
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                    />
+                  </label>
+                )}
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
@@ -778,6 +876,20 @@ export default function ItemCodePage() {
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 mb-1">Notas</h3>
                   <p className="text-gray-900 whitespace-pre-wrap">{item.notes}</p>
+                </div>
+              )}
+
+              {/* Imagen del artículo */}
+              {item.imageUrl && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">📷 Imagen</h3>
+                  <div className="relative rounded-lg overflow-hidden border-2 border-gray-200">
+                    <img 
+                      src={`http://localhost:4000${item.imageUrl}`}
+                      alt={item.name}
+                      className="w-full h-auto max-h-96 object-contain bg-gray-50"
+                    />
+                  </div>
                 </div>
               )}
             </div>
