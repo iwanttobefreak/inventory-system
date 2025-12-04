@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import { itemsAPI, categoriesAPI, categoryAttributesAPI, locationsAPI, locationAttributesAPI } from '@/lib/api';
+import { itemsAPI, categoriesAPI, categoryAttributesAPI, locationsAPI, locationAttributesAPI, getBackendUrl } from '@/lib/api';
 import { Item, Category, STATUS_LABELS, STATUS_COLORS, LocationAttribute } from '@/lib/types';
 import QRCode from 'qrcode.react';
 
@@ -341,36 +341,10 @@ export default function ItemCodePage() {
 
   // Vista de creación (item no existe)
   if (notFound) {
-    // Si NO está autenticado, mostrar solo mensaje de contacto
+    // Si NO está autenticado, redirigir a login
     if (isClient && !isAuthenticated()) {
-      return (
-        <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
-          <div className="max-w-2xl mx-auto px-4">
-            {/* Mensaje de contacto */}
-            <div className="p-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg shadow-lg">
-              <h3 className="text-3xl font-bold text-gray-900 mb-6 flex items-center justify-center">
-                <span className="mr-3 text-4xl">📞</span>
-                ¿Has encontrado este artículo?
-              </h3>
-              <p className="text-gray-700 mb-6 text-center text-lg">
-                Si has encontrado este artículo es porque <strong>lo he perdido</strong>. 
-                Por favor, contacta conmigo para devolverlo:
-              </p>
-              <div className="space-y-4 text-center">
-                <p className="text-2xl font-semibold text-gray-900">
-                  📱 Móvil: <a href="tel:+34630824788" className="text-blue-600 hover:underline">+34 630 824 788</a>
-                </p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  📧 Email: <a href="mailto:hola@kairoframe.com" className="text-blue-600 hover:underline">hola@kairoframe.com</a>
-                </p>
-              </div>
-              <p className="text-gray-600 mt-8 text-center text-lg italic">
-                ¡Muchas gracias por tu ayuda! 🙏
-              </p>
-            </div>
-          </div>
-        </div>
-      );
+      router.push('/login');
+      return null;
     }
 
     // Si está autenticado, mostrar formulario de creación
@@ -905,7 +879,7 @@ export default function ItemCodePage() {
                   <h3 className="text-sm font-medium text-gray-500 mb-2">📷 Imagen</h3>
                   <div className="relative rounded-lg overflow-hidden border-2 border-gray-200">
                     <img 
-                      src={`http://localhost:4000${item.imageUrl}`}
+                      src={`${getBackendUrl()}${item.imageUrl}`}
                       alt={item.name}
                       className="w-full h-auto max-h-96 object-contain bg-gray-50"
                     />

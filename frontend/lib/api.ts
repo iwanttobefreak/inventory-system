@@ -2,11 +2,15 @@ import axios from 'axios';
 
 // Determinar la URL de la API basándose en las variables de entorno
 let API_URL: string;
+let BACKEND_URL: string; // URL base del backend (sin /api)
 
 // Prioridad 1: NEXT_PUBLIC_API_URL definida explícitamente (producción/nginx)
 if (process.env.NEXT_PUBLIC_API_URL) {
   API_URL = process.env.NEXT_PUBLIC_API_URL;
+  // Extraer la URL base eliminando '/api'
+  BACKEND_URL = API_URL.replace('/api', '');
   console.log('🔧 API URL (from NEXT_PUBLIC_API_URL):', API_URL);
+  console.log('🔧 Backend URL:', BACKEND_URL);
 } 
 // Prioridad 2: Cliente (navegador) - construir con puerto configurado o default
 else if (typeof window !== 'undefined') {
@@ -14,14 +18,21 @@ else if (typeof window !== 'undefined') {
   const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https' : 'http';
   const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
   API_URL = `${protocol}://${hostname}:${backendPort}/api`;
+  BACKEND_URL = `${protocol}://${hostname}:${backendPort}`;
   console.log('🔧 API URL (cliente construida):', API_URL);
+  console.log('🔧 Backend URL:', BACKEND_URL);
 } 
 // Prioridad 3: Servidor (SSR) - usar nombre del servicio Docker
 else {
   const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT || '4000';
   API_URL = `http://backend:${backendPort}/api`;
+  BACKEND_URL = `http://backend:${backendPort}`;
   console.log('🔧 API URL (SSR Docker):', API_URL);
+  console.log('🔧 Backend URL:', BACKEND_URL);
 }
+
+// Exportar la URL base del backend para acceder a recursos estáticos (uploads)
+export const getBackendUrl = () => BACKEND_URL;
 
 export const api = axios.create({
   baseURL: API_URL,
