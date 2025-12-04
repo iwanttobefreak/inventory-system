@@ -3,18 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import { itemsAPI, categoriesAPI, getBackendUrl } from '@/lib/api';
-import { Item, Category, STATUS_LABELS, STATUS_COLORS } from '@/lib/types';
+import { itemsAPI, categoriesAPI, locationsAPI, locationAttributesAPI, getBackendUrl } from '@/lib/api';
+import { Item, Category, Location, LocationAttribute, STATUS_LABELS, STATUS_COLORS } from '@/lib/types';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuthStore();
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [locationAttributes, setLocationAttributes] = useState<LocationAttribute[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
+  const [filterLocationAttribute, setFilterLocationAttribute] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -26,12 +30,26 @@ export default function DashboardPage() {
 
   const loadData = async () => {
     try {
-      const [itemsRes, categoriesRes] = await Promise.all([
+      const [itemsRes, categoriesRes, locationsRes] = await Promise.all([
         itemsAPI.getAll(),
         categoriesAPI.getAll(),
+        locationsAPI.getAll(),
       ]);
       setItems(itemsRes.data);
       setCategories(categoriesRes.data);
+      setLocations(locationsRes.data);
+      
+      // Cargar todos los atributos de ubicación
+      const allLocationAttributes: LocationAttribute[] = [];
+      for (const location of locationsRes.data) {
+        try {
+          const attrsRes = await locationAttributesAPI.getAll(location.id);
+          allLocationAttributes.push(...attrsRes.data);
+        } catch (error) {
+          console.error(`Error loading attributes for location ${location.id}:`, error);
+        }
+      }
+      setLocationAttributes(allLocationAttributes);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -50,7 +68,16 @@ export default function DashboardPage() {
       item.code.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = !filterCategory || item.categoryId === filterCategory;
     const matchesStatus = !filterStatus || item.status === filterStatus;
-    return matchesSearch && matchesCategory && matchesStatus;
+    const matchesLocation = !filterLocation || item.locationId === filterLocation;
+    
+    // Buscar en attributes.sublocation si existe
+    const matchesLocationAttribute = !filterLocationAttribute || 
+      (item.attributes && 
+       typeof item.attributes === 'object' && 
+       'sublocation' in item.attributes && 
+       item.attributes.sublocation === filterLocationAttribute);
+    
+    return matchesSearch && matchesCategory && matchesStatus && matchesLocation && matchesLocationAttribute;
   });
 
   const stats = {
@@ -139,7 +166,7 @@ export default function DashboardPage() {
 
         {/* Filters */}
         <div className="bg-white p-4 rounded-lg shadow mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             <input
               type="text"
               placeholder="Buscar por nombre o código..."
@@ -170,6 +197,36 @@ export default function DashboardPage() {
                   {label}
                 </option>
               ))}
+            </select>
+            <select
+              value={filterLocation}
+              onChange={(e) => {
+                setFilterLocation(e.target.value);
+                setFilterLocationAttribute(''); // Reset ubicación al cambiar lugar
+              }}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">Todos los lugares</option>
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.icon} {loc.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterLocationAttribute}
+              onChange={(e) => setFilterLocationAttribute(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              disabled={!filterLocation}
+            >
+              <option value="">Todas las ubicaciones</option>
+              {locationAttributes
+                .filter(attr => !filterLocation || attr.locationId === filterLocation)
+                .map((attr) => (
+                  <option key={attr.id} value={attr.id}>
+                    {attr.code} - {attr.name}
+                  </option>
+                ))}
             </select>
           </div>
         </div>

@@ -16,6 +16,7 @@ export interface Item {
   notes?: string;
   imageUrl?: string;
   qrCodeUrl?: string;
+  attributes?: any; // JSON con atributos personalizados (sublocation, etc)
   createdAt: string;
   updatedAt: string;
 }
