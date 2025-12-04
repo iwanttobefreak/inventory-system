@@ -752,7 +752,16 @@ export default function ItemCodePage() {
               {!isEditing ? (
                 <>
                   <button
-                    onClick={() => setIsEditing(true)}
+                    onClick={async () => {
+                      setIsEditing(true);
+                      // Cargar atributos de categoría y sublocaciones al entrar en modo edición
+                      if (item?.categoryId) {
+                        await loadCategoryAttributes(item.categoryId);
+                      }
+                      if (item?.locationId) {
+                        await loadLocationSublocations(item.locationId);
+                      }
+                    }}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
                   >
                     ✏️ Editar
@@ -898,25 +907,12 @@ export default function ItemCodePage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre del Item *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Categoría *
                 </label>
                 <select
                   required
                   value={formData.categoryId}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">Selecciona una categoría</option>
@@ -926,6 +922,91 @@ export default function ItemCodePage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Atributos personalizados de la categoría */}
+              {categoryAttributes.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    📝 Atributos de {categories.find(c => c.id === formData.categoryId)?.name}
+                  </h3>
+                  {categoryAttributes.map((attr) => (
+                    <div key={attr.id}>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {attr.name} {attr.required && <span className="text-red-500">*</span>}
+                      </label>
+                      {attr.type === 'TEXT' && (
+                        <input
+                          type="text"
+                          required={attr.required}
+                          value={formData.attributes[attr.key] || ''}
+                          onChange={(e) => handleAttributeChange(attr.key, e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                      )}
+                      {attr.type === 'NUMBER' && (
+                        <input
+                          type="number"
+                          required={attr.required}
+                          value={formData.attributes[attr.key] || ''}
+                          onChange={(e) => handleAttributeChange(attr.key, parseFloat(e.target.value))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                      )}
+                      {attr.type === 'SELECT' && (
+                        <select
+                          required={attr.required}
+                          value={formData.attributes[attr.key] || ''}
+                          onChange={(e) => handleAttributeChange(attr.key, e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                          <option value="">Selecciona una opción</option>
+                          {attr.options?.split(',').map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {attr.type === 'DATE' && (
+                        <input
+                          type="date"
+                          required={attr.required}
+                          value={formData.attributes[attr.key] || ''}
+                          onChange={(e) => handleAttributeChange(attr.key, e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                      )}
+                      {attr.type === 'BOOLEAN' && (
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={formData.attributes[attr.key] || false}
+                            onChange={(e) => handleAttributeChange(attr.key, e.target.checked)}
+                            className="mr-2"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre del Item *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="Se genera automáticamente, pero puedes editarlo"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 El nombre se genera automáticamente con Categoría &gt; Atributo, pero puedes cambiarlo manualmente
+                </p>
               </div>
 
               <div>
@@ -955,6 +1036,7 @@ export default function ItemCodePage() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   rows={3}
+                  placeholder="Descripción detallada del item"
                 />
               </div>
 
@@ -996,16 +1078,48 @@ export default function ItemCodePage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ubicación
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Lugar
+                  </label>
+                  <select
+                    value={formData.locationId}
+                    onChange={(e) => handleLocationChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">Selecciona un lugar</option>
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.icon} {loc.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ubicación (UB-XXXX)
+                  </label>
+                  <select
+                    value={formData.attributes.sublocation || ''}
+                    onChange={(e) => handleAttributeChange('sublocation', e.target.value)}
+                    disabled={!formData.locationId}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Selecciona ubicación</option>
+                    {locationSublocations.map((subloc) => (
+                      <option key={subloc.id} value={subloc.code}>
+                        {subloc.code} - {subloc.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!formData.locationId && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Primero selecciona un lugar
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -1044,20 +1158,138 @@ export default function ItemCodePage() {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   rows={3}
+                  placeholder="Notas adicionales..."
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  📷 Imagen del artículo
+                </label>
+                {imagePreview ? (
+                  <div className="relative">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-full h-64 object-cover rounded-lg border-2 border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 bg-red-500 text-white px-3 py-2 rounded-full hover:bg-red-600 transition shadow-lg"
+                    >
+                      🗑️ Eliminar
+                    </button>
+                  </div>
+                ) : item?.imageUrl ? (
+                  <div className="relative">
+                    <img 
+                      src={`${getBackendUrl()}${item.imageUrl}`}
+                      alt={item.name}
+                      className="w-full h-64 object-cover rounded-lg border-2 border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (confirm('¿Estás seguro de que quieres eliminar la imagen actual?')) {
+                          try {
+                            await itemsAPI.deleteImage(code);
+                            alert('Imagen eliminada exitosamente');
+                            loadData();
+                          } catch (error) {
+                            console.error('Error deleting image:', error);
+                            alert('Error al eliminar la imagen');
+                          }
+                        }
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white px-3 py-2 rounded-full hover:bg-red-600 transition shadow-lg"
+                    >
+                      🗑️ Eliminar imagen actual
+                    </button>
+                    <div className="mt-3">
+                      <p className="text-sm text-gray-600 mb-2">O selecciona una nueva imagen para reemplazarla:</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Botón Cámara */}
+                        <label className="flex flex-col items-center justify-center h-32 border-2 border-primary-300 border-dashed rounded-lg cursor-pointer bg-primary-50 hover:bg-primary-100 transition">
+                          <svg className="w-12 h-12 text-primary-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <p className="text-sm font-medium text-primary-600">📸 Tomar Foto</p>
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*"
+                            capture="environment"
+                            onChange={handleImageSelect}
+                          />
+                        </label>
+
+                        {/* Botón Galería */}
+                        <label className="flex flex-col items-center justify-center h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
+                          <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <p className="text-sm font-medium text-gray-600">🖼️ Subir Archivo</p>
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={handleImageSelect}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Botón Cámara */}
+                    <label className="flex flex-col items-center justify-center h-32 border-2 border-primary-300 border-dashed rounded-lg cursor-pointer bg-primary-50 hover:bg-primary-100 transition">
+                      <svg className="w-12 h-12 text-primary-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <p className="text-sm font-medium text-primary-600">📸 Tomar Foto</p>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleImageSelect}
+                      />
+                    </label>
+
+                    {/* Botón Galería */}
+                    <label className="flex flex-col items-center justify-center h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
+                      <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-sm font-medium text-gray-600">🖼️ Subir Archivo</p>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition font-medium"
+                  disabled={uploadingImage}
+                  className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  💾 Guardar Cambios
+                  {uploadingImage ? '⏳ Guardando...' : '💾 Guardar Cambios'}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     setIsEditing(false);
+                    setSelectedImage(null);
+                    setImagePreview(null);
                     loadData();
                   }}
                   className="px-6 py-3 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
