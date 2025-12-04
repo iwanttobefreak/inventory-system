@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import { itemsAPI, categoriesAPI, categoryAttributesAPI } from '@/lib/api';
-import { Item, Category, STATUS_LABELS, STATUS_COLORS } from '@/lib/types';
+import { itemsAPI, categoriesAPI, categoryAttributesAPI, locationsAPI, locationAttributesAPI } from '@/lib/api';
+import { Item, Category, STATUS_LABELS, STATUS_COLORS, LocationAttribute } from '@/lib/types';
 import QRCode from 'qrcode.react';
 
 interface CategoryAttribute {
@@ -27,6 +27,8 @@ export default function ItemCodePage() {
   const [item, setItem] = useState<Item | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryAttributes, setCategoryAttributes] = useState<CategoryAttribute[]>([]);
+  const [locations, setLocations] = useState<any[]>([]);
+  const [locationSublocations, setLocationSublocations] = useState<LocationAttribute[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -38,6 +40,7 @@ export default function ItemCodePage() {
     description: '',
     categoryId: '',
     status: 'AVAILABLE',
+    locationId: '',
     location: '',
     brand: '',
     model: '',
@@ -100,12 +103,17 @@ export default function ItemCodePage() {
           const categoriesRes = await categoriesAPI.getAll();
           setCategories(categoriesRes.data);
           
+          // Cargar lugares
+          const locationsRes = await locationsAPI.getAll();
+          setLocations(locationsRes.data);
+          
           // Si existe, llenar el formulario con sus datos
           setFormData({
             name: itemRes.data.name,
             description: itemRes.data.description || '',
             categoryId: itemRes.data.categoryId,
             status: itemRes.data.status,
+            locationId: itemRes.data.locationId || '',
             location: itemRes.data.location || '',
             brand: itemRes.data.brand || '',
             model: itemRes.data.model || '',
@@ -120,6 +128,11 @@ export default function ItemCodePage() {
           if (itemRes.data.categoryId) {
             await loadCategoryAttributes(itemRes.data.categoryId);
           }
+          
+          // Cargar ubicaciones del lugar si tiene locationId
+          if (itemRes.data.locationId) {
+            await loadLocationSublocations(itemRes.data.locationId);
+          }
         }
       } catch (error: any) {
         // Si es 404 y estamos autenticados, mostrar formulario de creación
@@ -127,9 +140,11 @@ export default function ItemCodePage() {
           setNotFound(true);
           if (isAuthenticated()) {
             setIsEditing(true); // Activar modo edición para crear
-            // Cargar categorías para el formulario
+            // Cargar categorías y lugares para el formulario
             const categoriesRes = await categoriesAPI.getAll();
             setCategories(categoriesRes.data);
+            const locationsRes = await locationsAPI.getAll();
+            setLocations(locationsRes.data);
           }
         } else {
           throw error;
@@ -149,6 +164,25 @@ export default function ItemCodePage() {
     } catch (error) {
       console.error('Error loading category attributes:', error);
       setCategoryAttributes([]);
+    }
+  };
+
+  const loadLocationSublocations = async (locationId: string) => {
+    try {
+      const response = await locationAttributesAPI.getAll(locationId);
+      setLocationSublocations(response.data);
+    } catch (error) {
+      console.error('Error loading location sublocations:', error);
+      setLocationSublocations([]);
+    }
+  };
+
+  const handleLocationChange = async (locationId: string) => {
+    setFormData({ ...formData, locationId, attributes: { ...formData.attributes, sublocation: '' } });
+    if (locationId) {
+      await loadLocationSublocations(locationId);
+    } else {
+      setLocationSublocations([]);
     }
   };
 
@@ -455,17 +489,48 @@ export default function ItemCodePage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ubicación
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="Ej: Almacén A, Estante 3"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Lugar
+                  </label>
+                  <select
+                    value={formData.locationId}
+                    onChange={(e) => handleLocationChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">Selecciona un lugar</option>
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.icon} {loc.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ubicación (UB-XXXX)
+                  </label>
+                  <select
+                    value={formData.attributes.sublocation || ''}
+                    onChange={(e) => handleAttributeChange('sublocation', e.target.value)}
+                    disabled={!formData.locationId}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Selecciona ubicación</option>
+                    {locationSublocations.map((subloc) => (
+                      <option key={subloc.id} value={subloc.code}>
+                        {subloc.code} - {subloc.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!formData.locationId && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Primero selecciona un lugar
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

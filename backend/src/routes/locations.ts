@@ -2,48 +2,17 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-// Configurar multer para subir imágenes
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../uploads/locations');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'location-' + uniqueSuffix + path.extname(file.filename));
-  }
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (extname && mimetype) {
-      return cb(null, true);
-    }
-    cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, webp)'));
-  }
-});
-
 // Validación
 const createLocationSchema = z.object({
+  code: z.string().min(1, 'El código es requerido').regex(/^UB-\d{4}$/, 'El código debe tener el formato UB-XXXX'),
   name: z.string().min(1, 'El nombre es requerido'),
   description: z.string().optional(),
   icon: z.string().optional(),
+  color: z.string().optional(),
 });
 
 const updateLocationSchema = createLocationSchema.partial();
@@ -148,48 +117,6 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// POST /api/locations/:id/image - Subir imagen de ubicación
-router.post('/:id/image', authenticate, upload.single('image'), async (req: AuthRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    if (!req.file) {
-      return res.status(400).json({ error: 'No se proporcionó ninguna imagen' });
-    }
-
-    // Obtener ubicación actual para eliminar imagen anterior
-    const currentLocation = await prisma.location.findUnique({
-      where: { id }
-    });
-
-    if (!currentLocation) {
-      // Eliminar archivo subido
-      fs.unlinkSync(req.file.path);
-      return res.status(404).json({ error: 'Ubicación no encontrada' });
-    }
-
-    // Eliminar imagen anterior si existe
-    if (currentLocation.image) {
-      const oldImagePath = path.join(__dirname, '../../', currentLocation.image);
-      if (fs.existsSync(oldImagePath)) {
-        fs.unlinkSync(oldImagePath);
-      }
-    }
-
-    // Actualizar con nueva imagen
-    const imagePath = `/uploads/locations/${req.file.filename}`;
-    const location = await prisma.location.update({
-      where: { id },
-      data: { image: imagePath }
-    });
-
-    res.json(location);
-  } catch (error) {
-    console.error('Error uploading image:', error);
-    res.status(500).json({ error: 'Error al subir imagen' });
-  }
-});
-
 // DELETE /api/locations/:id - Eliminar ubicación
 router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
@@ -204,18 +131,6 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ 
         error: `No se puede eliminar la ubicación porque tiene ${itemCount} item(s) asociado(s).` 
       });
-    }
-
-    // Obtener ubicación para eliminar imagen
-    const location = await prisma.location.findUnique({
-      where: { id }
-    });
-
-    if (location && location.image) {
-      const imagePath = path.join(__dirname, '../../', location.image);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
     }
 
     await prisma.location.delete({

@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Iniciando seed de la base de datos...');
+  console.log('Iniciando seed...');
 
   // Crear usuario admin
   const hashedPassword = await bcrypt.hash('admin123', 10);
@@ -43,12 +43,14 @@ async function main() {
     console.log(`✅ Categoría creada: ${category.name}`);
   }
 
-  // Crear ubicaciones
+  // Crear LUGARES (Locations)
   const locations = [
-    { name: 'Estudio Principal', description: 'Estudio principal de grabación', icon: '🏢' },
-    { name: 'Almacén A', description: 'Almacén de equipos de audio', icon: '📦' },
-    { name: 'Set de rodaje', description: 'Área de rodaje activa', icon: '🎬' },
-    { name: 'Almacén B', description: 'Almacén de cables y accesorios', icon: '🔌' },
+    { name: 'Almacén', description: 'Almacén principal de equipos', icon: '📦', color: '#3B82F6' },
+    { name: 'Mantenimiento', description: 'Área de mantenimiento y reparaciones', icon: '🔧', color: '#F59E0B' },
+    { name: 'Plató', description: 'Plató de grabación y producción', icon: '🎬', color: '#EF4444' },
+    { name: 'Control', description: 'Sala de control técnico', icon: '🎛️', color: '#8B5CF6' },
+    { name: 'Sonido', description: 'Estudio de grabación de sonido', icon: '🔊', color: '#10B981' },
+    { name: 'Sala VR', description: 'Sala de realidad virtual', icon: '🥽', color: '#EC4899' },
   ];
 
   const createdLocations: any[] = [];
@@ -59,7 +61,42 @@ async function main() {
       create: loc,
     });
     createdLocations.push(location);
-    console.log(`✅ Ubicación creada: ${location.name}`);
+    console.log(`✅ Lugar creado: ${location.name}`);
+  }
+
+  // Crear UBICACIONES (LocationAttributes) dentro de cada lugar
+  const sublocationsData = [
+    // Almacén - 4 ubicaciones
+    { locationId: createdLocations[0].id, code: 'UB-0001', name: 'Estantería 1', description: 'Primera estantería', order: 1 },
+    { locationId: createdLocations[0].id, code: 'UB-0002', name: 'Estantería 2', description: 'Segunda estantería', order: 2 },
+    { locationId: createdLocations[0].id, code: 'UB-0003', name: 'Caja Cables', description: 'Caja de cables varios', order: 3 },
+    { locationId: createdLocations[0].id, code: 'UB-0004', name: 'Caja Ópticas', description: 'Caja de equipos ópticos', order: 4 },
+    // Mantenimiento - 2 ubicaciones
+    { locationId: createdLocations[1].id, code: 'UB-0005', name: 'Mesa de trabajo', description: 'Mesa principal', order: 1 },
+    { locationId: createdLocations[1].id, code: 'UB-0006', name: 'Armario herramientas', description: 'Armario', order: 2 },
+    // Plató - 3 ubicaciones
+    { locationId: createdLocations[2].id, code: 'UB-0007', name: 'Set A', description: 'Set de grabación A', order: 1 },
+    { locationId: createdLocations[2].id, code: 'UB-0008', name: 'Set B', description: 'Set de grabación B', order: 2 },
+    { locationId: createdLocations[2].id, code: 'UB-0009', name: 'Rack móvil', description: 'Rack de equipos móviles', order: 3 },
+    // Control - 2 ubicaciones
+    { locationId: createdLocations[3].id, code: 'UB-0010', name: 'Mesa de mezclas', description: 'Mesa principal', order: 1 },
+    { locationId: createdLocations[3].id, code: 'UB-0011', name: 'Rack técnico', description: 'Rack de equipos', order: 2 },
+    // Sonido - 2 ubicaciones
+    { locationId: createdLocations[4].id, code: 'UB-0012', name: 'Cabina', description: 'Cabina de grabación', order: 1 },
+    { locationId: createdLocations[4].id, code: 'UB-0013', name: 'Sala técnica', description: 'Sala de equipos', order: 2 },
+    // Sala VR - 2 ubicaciones
+    { locationId: createdLocations[5].id, code: 'UB-0014', name: 'Zona de juego', description: 'Área principal VR', order: 1 },
+    { locationId: createdLocations[5].id, code: 'UB-0015', name: 'Almacén VR', description: 'Almacén de equipos VR', order: 2 },
+  ];
+
+  for (const sublocData of sublocationsData) {
+    const subloc = await prisma.locationAttribute.upsert({
+      where: { code: sublocData.code },
+      update: {},
+      create: sublocData,
+    });
+    const location = createdLocations.find(l => l.id === sublocData.locationId);
+    console.log(`✅ Ubicación creada: ${subloc.code} - ${subloc.name} (${location?.name})`);
   }
 
   // Crear items de ejemplo
@@ -67,91 +104,51 @@ async function main() {
     {
       code: 'kf-0001',
       name: 'Sony A7S III',
-      description: 'Cámara mirrorless full frame para video profesional',
+      description: 'Cámara mirrorless full frame',
       categoryId: createdCategories[0].id,
       status: 'AVAILABLE',
       brand: 'Sony',
       model: 'A7S III',
       serialNumber: 'SN123456789',
-      locationId: createdLocations[0].id, // Estudio Principal
+      locationId: createdLocations[0].id,
+      attributes: { sublocation: 'UB-0001' }, // Almacén - Estantería 1
       purchaseDate: new Date('2023-01-15'),
       purchaseValue: 3999.99,
     },
     {
       code: 'kf-0002',
       name: 'Rode NTG3',
-      description: 'Micrófono de cañón para exteriores',
+      description: 'Micrófono de cañón',
       categoryId: createdCategories[1].id,
       status: 'AVAILABLE',
       brand: 'Rode',
       model: 'NTG3',
       serialNumber: 'RD987654321',
-      locationId: createdLocations[1].id, // Almacén A
+      locationId: createdLocations[4].id,
+      attributes: { sublocation: 'UB-0012' }, // Sonido - Cabina
       purchaseDate: new Date('2022-06-10'),
       purchaseValue: 699.00,
     },
-    {
-      code: 'kf-0003',
-      name: 'Aputure 300d II',
-      description: 'Luz LED de alta potencia',
-      categoryId: createdCategories[2].id,
-      status: 'IN_USE',
-      brand: 'Aputure',
-      model: '300d Mark II',
-      locationId: createdLocations[2].id, // Set de rodaje
-      purchaseDate: new Date('2023-03-20'),
-      purchaseValue: 899.00,
-    },
-    {
-      code: 'kf-0004',
-      name: 'Cable XLR 10m',
-      description: 'Cable XLR profesional de 10 metros',
-      categoryId: createdCategories[3].id,
-      status: 'AVAILABLE',
-      brand: 'Mogami',
-      locationId: createdLocations[3].id, // Almacén B
-      purchaseValue: 45.00,
-    },
-    {
-      code: 'kf-0005',
-      name: 'Manfrotto 546B',
-      description: 'Trípode profesional de video',
-      categoryId: createdCategories[4].id,
-      status: 'AVAILABLE',
-      brand: 'Manfrotto',
-      model: '546B',
-      locationId: createdLocations[0].id, // Estudio Principal
-      purchaseDate: new Date('2022-11-05'),
-      purchaseValue: 459.00,
-    },
   ];
 
-  for (const item of items) {
-    // Check if item already exists
-    const existingItem = await prisma.item.findUnique({
-      where: { code: item.code },
-    });
+  for (const itemData of items) {
+    try {
+      const existingItem = await prisma.item.findUnique({
+        where: { code: itemData.code },
+      });
 
-    if (existingItem) {
-      console.log(`ℹ️  Item ya existe: ${item.name} (${item.code}), omitiendo...`);
-      continue;
+      if (existingItem) {
+        console.log(`ℹ️  Item ya existe: ${itemData.name} (${itemData.code}), omitiendo...`);
+        continue;
+      }
+
+      const item = await prisma.item.create({
+        data: itemData,
+      });
+      console.log(`✅ Item creado: ${item.name} (${item.code})`);
+    } catch (error) {
+      console.error(`❌ Error creando item ${itemData.code}:`, error);
     }
-
-    const createdItem = await prisma.item.create({
-      data: item,
-    });
-    console.log(`✅ Item creado: ${createdItem.name} (${createdItem.code})`);
-
-    // Crear historial inicial
-    await prisma.itemHistory.create({
-      data: {
-        itemId: createdItem.id,
-        action: 'Creado',
-        description: 'Item agregado al inventario',
-        performedBy: 'Sistema',
-        newStatus: createdItem.status,
-      },
-    });
   }
 
   console.log('🎉 Seed completado exitosamente!');
@@ -159,7 +156,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error('❌ Error durante el seed:', e);
+    console.error('Error:', e);
     process.exit(1);
   })
   .finally(async () => {

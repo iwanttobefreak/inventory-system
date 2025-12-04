@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import { categoriesAPI, categoryAttributesAPI, usersAPI } from '@/lib/api';
+import { categoriesAPI, categoryAttributesAPI, locationsAPI, locationAttributesAPI, usersAPI } from '@/lib/api';
+import { LocationAttribute } from '@/lib/types';
+import LocationsPanel from './LocationsPanel';
 
 interface Category {
   id: string;
@@ -898,6 +900,11 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Panel de Lugares y Ubicaciones */}
+        <div className="mt-8">
+          <LocationsPanel />
         </div>
 
         {/* Panel de Usuarios */}

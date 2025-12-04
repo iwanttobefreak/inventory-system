@@ -22,10 +22,25 @@ export interface Item {
 
 export interface Location {
   id: string;
+  code: string;
   name: string;
   description?: string;
   icon?: string;
-  image?: string;
+  color?: string;
+  _count?: {
+    items: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LocationAttribute {
+  id: string;
+  locationId: string;
+  code: string;
+  name: string;
+  description?: string;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }

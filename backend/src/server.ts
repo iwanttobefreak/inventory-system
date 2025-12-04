@@ -6,6 +6,7 @@ import itemRoutes from './routes/items';
 import categoryRoutes from './routes/categories';
 import categoryAttributeRoutes from './routes/category-attributes';
 import locationRoutes from './routes/locations';
+import locationAttributeRoutes from './routes/location-attributes';
 import userRoutes from './routes/users';
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use('/api/items', itemRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/categories', categoryAttributeRoutes); // Rutas anidadas de atributos
 app.use('/api/locations', locationRoutes);
+app.use('/api/locations', locationAttributeRoutes); // Rutas anidadas de atributos de ubicaciones
 app.use('/api/users', userRoutes);
 
 // Manejo de errores

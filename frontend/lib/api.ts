@@ -84,6 +84,22 @@ export const categoryAttributesAPI = {
   delete: (categoryId: string, id: string) => api.delete(`/categories/${categoryId}/attributes/${id}`),
 };
 
+// Locations
+export const locationsAPI = {
+  getAll: () => api.get('/locations'),
+  create: (data: any) => api.post('/locations', data),
+  update: (id: string, data: any) => api.put(`/locations/${id}`, data),
+  delete: (id: string) => api.delete(`/locations/${id}`),
+};
+
+// Location Attributes
+export const locationAttributesAPI = {
+  getAll: (locationId: string) => api.get(`/locations/${locationId}/attributes`),
+  create: (locationId: string, data: any) => api.post(`/locations/${locationId}/attributes`, data),
+  update: (locationId: string, id: string, data: any) => api.put(`/locations/${locationId}/attributes/${id}`, data),
+  delete: (locationId: string, id: string) => api.delete(`/locations/${locationId}/attributes/${id}`),
+};
+
 // Users
 export const usersAPI = {
   getAll: () => api.get('/users'),

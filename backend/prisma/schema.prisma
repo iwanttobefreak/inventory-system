@@ -28,26 +28,26 @@ enum UserRole {
 }
 
 model Item {
-  id          String       @id @default(cuid())
-  code        String       @unique // Código único para QR
-  name        String
-  description String?
-  category    Category     @relation(fields: [categoryId], references: [id])
-  categoryId  String
-  status      ItemStatus   @default(AVAILABLE)
-  location    Location?    @relation(fields: [locationId], references: [id])
-  locationId  String?
-  purchaseDate DateTime?
+  id            String       @id @default(cuid())
+  code          String       @unique // Código único para QR
+  name          String
+  description   String?
+  category      Category     @relation(fields: [categoryId], references: [id])
+  categoryId    String
+  status        ItemStatus   @default(AVAILABLE)
+  location      Location?    @relation(fields: [locationId], references: [id])
+  locationId    String?
+  purchaseDate  DateTime?
   purchaseValue Float?
-  brand       String?
-  model       String?
-  serialNumber String?
-  notes       String?
-  imageUrl    String?
-  qrCodeUrl   String?      // URL del código QR generado
-  attributes  Json?        // Atributos personalizados según la categoría (ej: {"type": "XLR-XLR", "length": "5m"})
+  brand         String?
+  model         String?
+  serialNumber  String?
+  notes         String?
+  imageUrl      String?
+  qrCodeUrl     String?      // URL del código QR generado
+  attributes    Json?        // Atributos personalizados según la categoría + ubicación específica (ej: {"sublocation": "UB-0001", "type": "XLR-XLR"})
   
-  history     ItemHistory[]
+  history       ItemHistory[]
   
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -78,17 +78,35 @@ model Category {
   @@map("categories")
 }
 
+// LUGARES (ej: Almacén, Mantenimiento, Plató, Control, Sonido, Sala VR)
 model Location {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String              @id @default(cuid())
+  name        String              @unique
   description String?
-  icon        String?  // Emoji o nombre de icono
-  image       String?  // URL o path de la foto de la ubicación
-  items       Item[]
+  icon        String?             // Emoji o nombre de icono
+  color       String?             // Color hex para UI
+  items       Item[]              // Items en este lugar
+  sublocations LocationAttribute[] // Lista de ubicaciones específicas (UB-XXXX)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@map("locations")
+}
+
+// UBICACIONES específicas dentro de un lugar (ej: Estantería 1, Caja cables, UB-0001, etc)
+model LocationAttribute {
+  id          String   @id @default(cuid())
+  location    Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId  String
+  code        String   @unique // Código único UB-XXXX
+  name        String   // Nombre descriptivo (ej: "Estantería 1", "Caja cables")
+  description String?
+  order       Int      @default(0) // Orden de visualización
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("locations")
+  @@unique([locationId, code]) // No puede haber dos códigos iguales en una ubicación
+  @@map("location_attributes")
 }
 
 model CategoryAttribute {
