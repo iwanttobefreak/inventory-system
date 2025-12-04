@@ -28,6 +28,24 @@ export default function DashboardPage() {
     loadData();
   }, []);
 
+  // Efecto para leer parámetros de URL y setear filtros (cuando venimos de una página UB-XXXX)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && locationAttributes.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const locationParam = urlParams.get('location');
+      const sublocationParam = urlParams.get('sublocation');
+
+      console.log('📍 URL params:', { locationParam, sublocationParam });
+
+      if (locationParam) {
+        setFilterLocation(locationParam);
+      }
+      if (sublocationParam) {
+        setFilterLocationAttribute(sublocationParam);
+      }
+    }
+  }, [locationAttributes]);
+
   const loadData = async () => {
     try {
       const [itemsRes, categoriesRes, locationsRes] = await Promise.all([
@@ -71,11 +89,20 @@ export default function DashboardPage() {
     const matchesLocation = !filterLocation || item.locationId === filterLocation;
     
     // Buscar en attributes.sublocation si existe
-    const matchesLocationAttribute = !filterLocationAttribute || 
-      (item.attributes && 
-       typeof item.attributes === 'object' && 
-       'sublocation' in item.attributes && 
-       item.attributes.sublocation === filterLocationAttribute);
+    // Necesitamos encontrar el código de la ubicación seleccionada
+    let matchesLocationAttribute = true;
+    if (filterLocationAttribute) {
+      const selectedAttr = locationAttributes.find(attr => attr.id === filterLocationAttribute);
+      if (selectedAttr) {
+        matchesLocationAttribute = 
+          item.attributes && 
+          typeof item.attributes === 'object' && 
+          'sublocation' in item.attributes && 
+          item.attributes.sublocation === selectedAttr.code;
+      } else {
+        matchesLocationAttribute = false;
+      }
+    }
     
     return matchesSearch && matchesCategory && matchesStatus && matchesLocation && matchesLocationAttribute;
   });
@@ -265,11 +292,26 @@ export default function DashboardPage() {
                       </span>
                     </div>
 
-                    {/* Ubicación */}
-                    {item.location && (
-                      <p className="text-xs text-gray-600">
-                        <span className="font-medium">{item.location.icon || '📍'}</span> {item.location.name}
-                      </p>
+                    {/* Lugar y Ubicación en un cuadro */}
+                    {(item.location || (item.attributes && item.attributes.sublocation)) && (
+                      <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                        {item.location && (
+                          <p className="text-xs text-blue-800 font-medium">
+                            {item.location.icon || '📍'} {item.location.name}
+                          </p>
+                        )}
+                        {item.attributes && item.attributes.sublocation && (() => {
+                          const sublocationAttr = locationAttributes.find(
+                            attr => attr.code === item.attributes.sublocation
+                          );
+                          return (
+                            <p className="text-xs text-blue-600 font-mono">
+                              📦 {item.attributes.sublocation}
+                              {sublocationAttr && ` ${sublocationAttr.name}`}
+                            </p>
+                          );
+                        })()}
+                      </div>
                     )}
 
                     {/* Marca y modelo */}

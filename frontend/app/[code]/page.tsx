@@ -850,15 +850,6 @@ export default function ItemCodePage() {
                     <p className="text-gray-900">{item.serialNumber}</p>
                   </div>
                 )}
-                {item.location && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Ubicación</h3>
-                    <p className="text-gray-900">
-                      {item.location.icon && <span className="mr-1">{item.location.icon}</span>}
-                      {item.location.name}
-                    </p>
-                  </div>
-                )}
                 {item.purchaseDate && (
                   <div>
                     <h3 className="text-sm font-medium text-gray-500 mb-1">Fecha de Compra</h3>
@@ -874,6 +865,40 @@ export default function ItemCodePage() {
                   </div>
                 )}
               </div>
+
+              {/* Lugar y Ubicación en un cuadro destacado */}
+              {(item.location || (item.attributes && item.attributes.sublocation)) && (
+                <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-blue-900 mb-2">📍 Ubicación</h3>
+                  <div className="space-y-2">
+                    {item.location && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{item.location.icon || '📍'}</span>
+                        <div>
+                          <p className="text-blue-900 font-medium">{item.location.name}</p>
+                          {item.location.description && (
+                            <p className="text-xs text-blue-700">{item.location.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {item.attributes && item.attributes.sublocation && (() => {
+                      const sublocationAttr = locationSublocations.find(
+                        attr => attr.code === item.attributes.sublocation
+                      );
+                      return (
+                        <div className="flex items-center gap-2 bg-blue-100 rounded p-2">
+                          <span className="text-xl">📦</span>
+                          <p className="text-blue-900 font-mono font-bold text-lg">
+                            {item.attributes.sublocation}
+                            {sublocationAttr && ` ${sublocationAttr.name}`}
+                          </p>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
 
               {item.notes && (
                 <div>
