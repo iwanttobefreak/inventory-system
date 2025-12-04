@@ -785,47 +785,31 @@ export default function ItemCodePage() {
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             {/* Header con estado */}
             <div className={`p-6 ${STATUS_COLORS[item.status]}`}>
-              <div className="flex items-start justify-between gap-6">
-                <div className="flex-1">
+              <div className="flex items-start justify-between">
+                <div>
                   <div className="text-sm font-medium opacity-90 mb-1">
                     {code.toUpperCase()}
                   </div>
-                  {/* Nombre con icono de categoría */}
-                  <div className="flex items-center gap-2 mb-2">
-                    {category && (
-                      <span className="text-4xl">{category.icon}</span>
-                    )}
-                    <h1 className="text-3xl font-bold">{item.name}</h1>
-                  </div>
+                  <h1 className="text-3xl font-bold mb-2">{item.name}</h1>
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white bg-opacity-90">
                       {STATUS_LABELS[item.status]}
                     </span>
                     {category && (
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white bg-opacity-90">
-                        {category.name}
+                        {category.icon} {category.name}
                       </span>
                     )}
                   </div>
                 </div>
                 
-                {/* Miniatura de imagen o QR Code */}
-                {item.imageUrl ? (
-                  <div className="flex-shrink-0">
-                    <img 
-                      src={`${getBackendUrl()}${item.imageUrl}`}
-                      alt={item.name}
-                      className="w-auto h-auto max-w-[250px] max-h-[275px] object-contain rounded-lg shadow-lg border-2 border-white"
-                    />
+                {/* QR Code */}
+                <div className="bg-white p-4 rounded-lg shadow">
+                  <QRCode value={publicUrl} size={120} />
+                  <div className="text-xs text-center mt-2 text-gray-600">
+                    Escanear para ver
                   </div>
-                ) : (
-                  <div className="bg-white p-4 rounded-lg shadow flex-shrink-0">
-                    <QRCode value={publicUrl} size={120} />
-                    <div className="text-xs text-center mt-2 text-gray-600">
-                      Escanear para ver
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
 
@@ -886,6 +870,20 @@ export default function ItemCodePage() {
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 mb-1">Notas</h3>
                   <p className="text-gray-900 whitespace-pre-wrap">{item.notes}</p>
+                </div>
+              )}
+
+              {/* Imagen del artículo */}
+              {item.imageUrl && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">📷 Imagen</h3>
+                  <div className="relative rounded-lg overflow-hidden border-2 border-gray-200">
+                    <img 
+                      src={`${getBackendUrl()}${item.imageUrl}`}
+                      alt={item.name}
+                      className="w-full h-auto max-h-96 object-contain bg-gray-50"
+                    />
+                  </div>
                 </div>
               )}
             </div>

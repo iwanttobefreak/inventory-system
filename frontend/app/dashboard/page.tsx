@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import { itemsAPI, categoriesAPI } from '@/lib/api';
+import { itemsAPI, categoriesAPI, getBackendUrl } from '@/lib/api';
 import { Item, Category, STATUS_LABELS, STATUS_COLORS } from '@/lib/types';
 
 export default function DashboardPage() {
@@ -180,38 +180,57 @@ export default function DashboardPage() {
             <div
               key={item.id}
               onClick={() => router.push(`/${item.code}`)}
-              className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
+              className="bg-white rounded-lg shadow hover:shadow-lg transition cursor-pointer overflow-hidden"
             >
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
-                  <p className="text-sm text-gray-500 font-mono">{item.code}</p>
+              <div className="p-6">
+                {/* Header con icono y miniatura */}
+                <div className="flex justify-between items-start gap-4 mb-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    {/* Icono de categoría */}
+                    <span className="text-3xl flex-shrink-0">{item.category.icon}</span>
+                    
+                    {/* Nombre y código */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900 truncate">{item.name}</h3>
+                      <p className="text-sm text-gray-500 font-mono">{item.code}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Miniatura de imagen */}
+                  {item.imageUrl && (
+                    <div className="flex-shrink-0">
+                      <img 
+                        src={`${getBackendUrl()}${item.imageUrl}`}
+                        alt={item.name}
+                        className="w-auto h-auto max-w-[100px] max-h-[110px] object-contain rounded border border-gray-200"
+                      />
+                    </div>
+                  )}
                 </div>
-                <span className="text-2xl">{item.category.icon}</span>
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[item.status]}`}>
-                    {STATUS_LABELS[item.status]}
-                  </span>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[item.status]}`}>
+                      {STATUS_LABELS[item.status]}
+                    </span>
+                  </div>
+
+                  {item.brand && (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Marca:</span> {item.brand} {item.model}
+                    </p>
+                  )}
+
+                  {item.location && (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">{item.location.icon || '📍'}</span> {item.location.name}
+                    </p>
+                  )}
+
+                  <p className="text-xs text-gray-400">
+                    {item.category.name}
+                  </p>
                 </div>
-
-                {item.brand && (
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">Marca:</span> {item.brand} {item.model}
-                  </p>
-                )}
-
-                {item.location && (
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">{item.location.icon || '📍'}</span> {item.location.name}
-                  </p>
-                )}
-
-                <p className="text-xs text-gray-400">
-                  {item.category.name}
-                </p>
               </div>
             </div>
           ))}
