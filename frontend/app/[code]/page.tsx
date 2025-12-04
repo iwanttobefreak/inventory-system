@@ -705,12 +705,12 @@ export default function ItemCodePage() {
               Si has encontrado este artículo es porque <strong>lo he perdido</strong>. 
               Por favor, contacta conmigo para devolverlo:
             </p>
-            <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
-              <p className="text-2xl font-semibold text-gray-900">
-                📱 Móvil: <a href="tel:+34630824788" className="text-blue-600 hover:underline">+34 630 824 788</a>
+            <div className="space-y-3">
+              <p className="text-2xl font-semibold text-gray-900 text-center whitespace-nowrap">
+                � Email: <a href="mailto:hola@kairoframe.com" className="text-blue-600 hover:underline">hola@kairoframe.com</a>
               </p>
-              <p className="text-2xl font-semibold text-gray-900">
-                📧 Email: <a href="mailto:hola@kairoframe.com" className="text-blue-600 hover:underline">hola@kairoframe.com</a>
+              <p className="text-2xl font-semibold text-gray-900 text-center whitespace-nowrap">
+                🌐 Web: <a href="https://kairoframe.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">kairoframe.com</a>
               </p>
             </div>
             <p className="text-gray-600 mt-8 text-center text-lg italic">
