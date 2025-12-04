@@ -183,53 +183,64 @@ export default function DashboardPage() {
               className="bg-white rounded-lg shadow hover:shadow-lg transition cursor-pointer overflow-hidden"
             >
               <div className="p-6">
-                {/* Header con icono y miniatura */}
-                <div className="flex justify-between items-start gap-4 mb-3">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    {/* Icono de categoría */}
-                    <span className="text-3xl flex-shrink-0">{item.category.icon}</span>
-                    
-                    {/* Nombre y código */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 truncate">{item.name}</h3>
-                      <p className="text-sm text-gray-500 font-mono">{item.code}</p>
+                {/* Tabla de dos columnas: Datos | Imagen */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Columna izquierda: Datos */}
+                  <div className="space-y-2">
+                    {/* Icono y nombre */}
+                    <div className="flex items-start gap-2 mb-2">
+                      <span className="text-2xl flex-shrink-0">{item.category.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-semibold text-gray-900 leading-tight">{item.name}</h3>
+                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Miniatura de imagen */}
-                  {item.imageUrl && (
-                    <div className="flex-shrink-0 w-[100px] h-[110px] bg-gray-50 rounded border border-gray-200 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src={`${getBackendUrl()}${item.imageUrl}`}
-                        alt={item.name}
-                        className="w-full h-full object-contain"
-                      />
+
+                    {/* Código */}
+                    <p className="text-xs text-gray-500 font-mono">{item.code}</p>
+
+                    {/* Estado */}
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[item.status]}`}>
+                        {STATUS_LABELS[item.status]}
+                      </span>
                     </div>
-                  )}
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[item.status]}`}>
-                      {STATUS_LABELS[item.status]}
-                    </span>
+                    {/* Ubicación */}
+                    {item.location && (
+                      <p className="text-xs text-gray-600">
+                        <span className="font-medium">{item.location.icon || '📍'}</span> {item.location.name}
+                      </p>
+                    )}
+
+                    {/* Marca y modelo */}
+                    {item.brand && (
+                      <p className="text-xs text-gray-600">
+                        <span className="font-medium">Marca:</span> {item.brand} {item.model}
+                      </p>
+                    )}
+
+                    {/* Categoría */}
+                    <p className="text-xs text-gray-400">
+                      {item.category.name}
+                    </p>
                   </div>
 
-                  {item.brand && (
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Marca:</span> {item.brand} {item.model}
-                    </p>
-                  )}
-
-                  {item.location && (
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">{item.location.icon || '📍'}</span> {item.location.name}
-                    </p>
-                  )}
-
-                  <p className="text-xs text-gray-400">
-                    {item.category.name}
-                  </p>
+                  {/* Columna derecha: Imagen grande */}
+                  <div className="flex items-center justify-center">
+                    {item.imageUrl ? (
+                      <div className="w-full h-full min-h-[200px] bg-gray-50 rounded border border-gray-200 flex items-center justify-center overflow-hidden">
+                        <img 
+                          src={`${getBackendUrl()}${item.imageUrl}`}
+                          alt={item.name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full min-h-[200px] bg-gray-50 rounded border border-gray-200 flex items-center justify-center">
+                        <span className="text-4xl text-gray-300">{item.category.icon}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
