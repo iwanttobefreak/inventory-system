@@ -107,7 +107,10 @@ export default function DashboardPage() {
               </h1>
               <p className="text-sm text-gray-600">Bienvenido, {user?.name}</p>
             </div>
+            
+            {/* Botones y Estadísticas en la misma fila */}
             <div className="flex flex-wrap gap-2">
+              {/* Botones de acción */}
               <button
                 onClick={() => router.push('/scanner')}
                 className="flex-1 min-w-[140px] px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition text-sm whitespace-nowrap"
@@ -138,31 +141,30 @@ export default function DashboardPage() {
               >
                 Cerrar sesión
               </button>
+
+              {/* Estadísticas compactas */}
+              <div className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
+                <div className="text-lg font-bold text-primary-600">{stats.total}</div>
+                <div className="text-xs text-gray-600">Total items</div>
+              </div>
+              <div className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
+                <div className="text-lg font-bold text-green-600">{stats.available}</div>
+                <div className="text-xs text-gray-600">Disponibles</div>
+              </div>
+              <div className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
+                <div className="text-lg font-bold text-blue-600">{stats.inUse}</div>
+                <div className="text-xs text-gray-600">En uso</div>
+              </div>
+              <div className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
+                <div className="text-lg font-bold text-yellow-600">{stats.maintenance}</div>
+                <div className="text-xs text-gray-600">Mantenimiento</div>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="text-3xl font-bold text-primary-600">{stats.total}</div>
-            <div className="text-sm text-gray-600 mt-1">Total de items</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="text-3xl font-bold text-green-600">{stats.available}</div>
-            <div className="text-sm text-gray-600 mt-1">Disponibles</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="text-3xl font-bold text-blue-600">{stats.inUse}</div>
-            <div className="text-sm text-gray-600 mt-1">En uso</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="text-3xl font-bold text-yellow-600">{stats.maintenance}</div>
-            <div className="text-sm text-gray-600 mt-1">Mantenimiento</div>
-          </div>
-        </div>
 
         {/* Filters */}
         <div className="bg-white p-4 rounded-lg shadow mb-6">
