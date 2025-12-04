@@ -108,9 +108,8 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-600">Bienvenido, {user?.name}</p>
             </div>
             
-            {/* Botones y Estadísticas en la misma fila */}
+            {/* Fila de botones */}
             <div className="flex flex-wrap gap-2">
-              {/* Botones de acción */}
               <button
                 onClick={() => router.push('/scanner')}
                 className="flex-1 min-w-[140px] px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition text-sm whitespace-nowrap"
@@ -141,21 +140,23 @@ export default function DashboardPage() {
               >
                 Cerrar sesión
               </button>
+            </div>
 
-              {/* Estadísticas compactas */}
-              <div className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
+            {/* Fila de estadísticas */}
+            <div className="grid grid-cols-4 gap-2">
+              <div className="px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
                 <div className="text-lg font-bold text-primary-600">{stats.total}</div>
                 <div className="text-xs text-gray-600">Total items</div>
               </div>
-              <div className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
+              <div className="px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
                 <div className="text-lg font-bold text-green-600">{stats.available}</div>
                 <div className="text-xs text-gray-600">Disponibles</div>
               </div>
-              <div className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
+              <div className="px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
                 <div className="text-lg font-bold text-blue-600">{stats.inUse}</div>
                 <div className="text-xs text-gray-600">En uso</div>
               </div>
-              <div className="flex-1 min-w-[140px] px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
+              <div className="px-3 py-2 bg-gray-50 rounded-md border border-gray-200 flex flex-col justify-center">
                 <div className="text-lg font-bold text-yellow-600">{stats.maintenance}</div>
                 <div className="text-xs text-gray-600">Mantenimiento</div>
               </div>
