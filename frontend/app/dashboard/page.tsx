@@ -198,11 +198,11 @@ export default function DashboardPage() {
                   
                   {/* Miniatura de imagen */}
                   {item.imageUrl && (
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 w-[100px] h-[110px] bg-gray-50 rounded border border-gray-200 flex items-center justify-center overflow-hidden">
                       <img 
                         src={`${getBackendUrl()}${item.imageUrl}`}
                         alt={item.name}
-                        className="w-auto h-auto max-w-[100px] max-h-[110px] object-contain rounded border border-gray-200"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                   )}
