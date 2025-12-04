@@ -36,12 +36,26 @@ export default function DashboardPage() {
       const sublocationParam = urlParams.get('sublocation');
 
       console.log('📍 URL params:', { locationParam, sublocationParam });
+      console.log('📍 Location attributes disponibles:', locationAttributes);
 
       if (locationParam) {
         setFilterLocation(locationParam);
       }
+      
+      // Si viene sublocation por URL, buscar el atributo por código
       if (sublocationParam) {
-        setFilterLocationAttribute(sublocationParam);
+        console.log('🔍 Buscando atributo con código:', sublocationParam);
+        const attr = locationAttributes.find(a => a.code.toUpperCase() === sublocationParam.toUpperCase());
+        console.log('🔍 Atributo encontrado:', attr);
+        
+        if (attr) {
+          // Establecer tanto la ubicación padre como el atributo
+          setFilterLocation(attr.locationId);
+          setFilterLocationAttribute(attr.id);
+          console.log('✅ Filtros establecidos - locationId:', attr.locationId, 'attributeId:', attr.id);
+        } else {
+          console.error('❌ No se encontró atributo con código:', sublocationParam);
+        }
       }
     }
   }, [locationAttributes]);
