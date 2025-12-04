@@ -559,6 +559,16 @@ export default function ItemCodePage() {
             <p className="text-gray-600 mt-8 text-center text-lg italic">
               ¡Muchas gracias por tu ayuda! 🙏
             </p>
+            
+            {/* Botón de Login */}
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() => router.push('/login')}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg font-medium"
+              >
+                🔐 Acceder al Sistema
+              </button>
+            </div>
           </div>
         </div>
       </div>
