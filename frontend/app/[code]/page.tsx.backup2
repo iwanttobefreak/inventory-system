@@ -573,10 +573,10 @@ export default function ItemCodePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    📍 Lugar
+                    Lugar
                   </label>
                   <select
                     value={formData.locationId}
@@ -594,36 +594,12 @@ export default function ItemCodePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    📚 Estantería (ES-XXXX)
-                  </label>
-                  <select
-                    value={formData.shelfId}
-                    onChange={(e) => handleShelfChange(e.target.value)}
-                    disabled={!formData.locationId}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Selecciona una estantería</option>
-                    {shelves.map((shelf) => (
-                      <option key={shelf.id} value={shelf.id}>
-                        {shelf.code} - {shelf.name}
-                      </option>
-                    ))}
-                  </select>
-                  {!formData.locationId && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Primero selecciona un lugar
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    📦 Ubicación (UB-XXXX)
+                    Ubicación (UB-XXXX)
                   </label>
                   <select
                     value={formData.attributes.sublocation || ''}
                     onChange={(e) => handleAttributeChange('sublocation', e.target.value)}
-                    disabled={!formData.shelfId}
+                    disabled={!formData.locationId}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Selecciona ubicación</option>
@@ -633,9 +609,9 @@ export default function ItemCodePage() {
                       </option>
                     ))}
                   </select>
-                  {!formData.shelfId && (
+                  {!formData.locationId && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Primero selecciona una estantería
+                      Primero selecciona un lugar
                     </p>
                   )}
                 </div>
@@ -1181,10 +1157,10 @@ export default function ItemCodePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    📍 Lugar
+                    Lugar
                   </label>
                   <select
                     value={formData.locationId}
@@ -1202,36 +1178,12 @@ export default function ItemCodePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    📚 Estantería (ES-XXXX)
-                  </label>
-                  <select
-                    value={formData.shelfId}
-                    onChange={(e) => handleShelfChange(e.target.value)}
-                    disabled={!formData.locationId}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Selecciona una estantería</option>
-                    {shelves.map((shelf) => (
-                      <option key={shelf.id} value={shelf.id}>
-                        {shelf.code} - {shelf.name}
-                      </option>
-                    ))}
-                  </select>
-                  {!formData.locationId && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Primero selecciona un lugar
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    📦 Ubicación (UB-XXXX)
+                    Ubicación (UB-XXXX)
                   </label>
                   <select
                     value={formData.attributes.sublocation || ''}
                     onChange={(e) => handleAttributeChange('sublocation', e.target.value)}
-                    disabled={!formData.shelfId}
+                    disabled={!formData.locationId}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Selecciona ubicación</option>
@@ -1241,9 +1193,9 @@ export default function ItemCodePage() {
                       </option>
                     ))}
                   </select>
-                  {!formData.shelfId && (
+                  {!formData.locationId && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Primero selecciona una estantería
+                      Primero selecciona un lugar
                     </p>
                   )}
                 </div>
