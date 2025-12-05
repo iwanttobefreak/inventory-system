@@ -3,8 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import { itemsAPI, categoriesAPI, locationsAPI, locationAttributesAPI, getBackendUrl } from '@/lib/api';
-import { Item, Category, Location, LocationAttribute, STATUS_LABELS, STATUS_COLORS } from '@/lib/types';
+import { itemsAPI, categoriesAPI, locationsAPI, shelvesAPI, locationAttributesAPI, getBackendUrl } from '@/lib/api';
+import { Item, Category, Location, Shelf, LocationAttribute, STATUS_LABELS, STATUS_COLORS } from '@/lib/types';
+
+// Forzar renderizado dinámico para evitar cache
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -12,12 +16,16 @@ export default function DashboardPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
+  const [shelves, setShelves] = useState<Shelf[]>([]);
   const [locationAttributes, setLocationAttributes] = useState<LocationAttribute[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  console.log('🔍 Dashboard render - shelves:', shelves, 'type:', typeof shelves, 'isArray:', Array.isArray(shelves));
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
+  const [filterShelf, setFilterShelf] = useState('');
   const [filterLocationAttribute, setFilterLocationAttribute] = useState('');
 
   useEffect(() => {
@@ -62,14 +70,19 @@ export default function DashboardPage() {
 
   const loadData = async () => {
     try {
-      const [itemsRes, categoriesRes, locationsRes] = await Promise.all([
+      const [itemsRes, categoriesRes, locationsRes, shelvesRes] = await Promise.all([
         itemsAPI.getAll(),
         categoriesAPI.getAll(),
         locationsAPI.getAll(),
+        shelvesAPI.getAll().catch(err => {
+          console.error('Error loading shelves:', err);
+          return { data: [] }; // Devolver array vacío si falla
+        }),
       ]);
-      setItems(itemsRes.data);
-      setCategories(categoriesRes.data);
-      setLocations(locationsRes.data);
+      setItems(itemsRes.data || []);
+      setCategories(categoriesRes.data || []);
+      setLocations(locationsRes.data || []);
+      setShelves(shelvesRes.data || []);
       
       // Cargar todos los atributos de ubicación
       const allLocationAttributes: LocationAttribute[] = [];
@@ -84,6 +97,12 @@ export default function DashboardPage() {
       setLocationAttributes(allLocationAttributes);
     } catch (error) {
       console.error('Error loading data:', error);
+      // Asegurarse de que los estados tengan valores por defecto
+      setItems([]);
+      setCategories([]);
+      setLocations([]);
+      setShelves([]);
+      setLocationAttributes([]);
     } finally {
       setLoading(false);
     }
@@ -246,6 +265,7 @@ export default function DashboardPage() {
               value={filterLocation}
               onChange={(e) => {
                 setFilterLocation(e.target.value);
+                setFilterShelf(''); // Reset estantería al cambiar lugar
                 setFilterLocationAttribute(''); // Reset ubicación al cambiar lugar
               }}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -258,19 +278,54 @@ export default function DashboardPage() {
               ))}
             </select>
             <select
-              value={filterLocationAttribute}
-              onChange={(e) => setFilterLocationAttribute(e.target.value)}
+              value={filterShelf}
+              onChange={(e) => {
+                setFilterShelf(e.target.value);
+                setFilterLocationAttribute(''); // Reset ubicación al cambiar estantería
+              }}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               disabled={!filterLocation}
             >
+              <option value="">Todas las estanterías</option>
+              {(() => {
+                const shelvesArray = Array.isArray(shelves) ? shelves : [];
+                console.log('🔍 Rendering shelves dropdown:', { shelves, shelvesArray, isArray: Array.isArray(shelves) });
+                return shelvesArray
+                  .filter(shelf => !filterLocation || shelf.locationId === filterLocation)
+                  .map((shelf) => (
+                    <option key={shelf.id} value={shelf.id}>
+                      {shelf.code} - {shelf.name}
+                    </option>
+                  ));
+              })()}
+            </select>
+            <select
+              value={filterLocationAttribute}
+              onChange={(e) => setFilterLocationAttribute(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              disabled={!filterShelf}
+            >
               <option value="">Todas las ubicaciones</option>
-              {locationAttributes
-                .filter(attr => !filterLocation || attr.locationId === filterLocation)
-                .map((attr) => (
-                  <option key={attr.id} value={attr.id}>
-                    {attr.code} - {attr.name}
-                  </option>
-                ))}
+              {(() => {
+                const attrsArray = Array.isArray(locationAttributes) ? locationAttributes : [];
+                console.log('🔍 Rendering locationAttributes dropdown:', { locationAttributes, attrsArray, isArray: Array.isArray(locationAttributes) });
+                return attrsArray
+                  .filter(attr => {
+                    if (filterShelf) {
+                      // Si hay estantería seleccionada, mostrar solo ubicaciones de esa estantería
+                      return attr.shelfId === filterShelf;
+                    } else if (filterLocation) {
+                      // Si solo hay lugar, mostrar ubicaciones sin estantería de ese lugar
+                      return attr.locationId === filterLocation && !attr.shelfId;
+                    }
+                    return true;
+                  })
+                  .map((attr) => (
+                    <option key={attr.id} value={attr.id}>
+                      {attr.code} - {attr.name}
+                    </option>
+                  ));
+              })()}
             </select>
           </div>
         </div>

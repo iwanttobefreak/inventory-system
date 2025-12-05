@@ -35,13 +35,28 @@ export interface Location {
   updatedAt: string;
 }
 
+export interface Shelf {
+  id: string;
+  locationId: string;
+  code: string; // ES-XXXX
+  name: string;
+  description?: string;
+  order: number;
+  location?: Location;
+  sublocations?: LocationAttribute[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface LocationAttribute {
   id: string;
   locationId: string;
+  shelfId?: string; // Opcional: si pertenece a una estantería
   code: string;
   name: string;
   description?: string;
   order: number;
+  shelf?: Shelf;
   createdAt: string;
   updatedAt: string;
 }

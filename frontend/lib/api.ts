@@ -113,12 +113,33 @@ export const locationsAPI = {
   delete: (id: string) => api.delete(`/locations/${id}`),
 };
 
-// Location Attributes
+// Shelves (Estanterías)
+export const shelvesAPI = {
+  getAll: (locationId?: string) => api.get('/shelves', { params: locationId ? { locationId } : undefined }),
+  getById: (id: string) => api.get(`/shelves/${id}`),
+  create: (data: any) => api.post('/shelves', data),
+  update: (id: string, data: any) => api.put(`/shelves/${id}`, data),
+  delete: (id: string) => api.delete(`/shelves/${id}`),
+};
+
+// Location Attributes (Ubicaciones - nivel 3)
 export const locationAttributesAPI = {
-  getAll: (locationId: string) => api.get(`/locations/${locationId}/attributes`),
-  create: (locationId: string, data: any) => api.post(`/locations/${locationId}/attributes`, data),
-  update: (locationId: string, id: string, data: any) => api.put(`/locations/${locationId}/attributes/${id}`, data),
-  delete: (locationId: string, id: string) => api.delete(`/locations/${locationId}/attributes/${id}`),
+  getAll: (locationIdOrShelfId?: string, isShelf?: boolean) => {
+    if (!locationIdOrShelfId) {
+      return api.get('/locations/all/attributes');
+    }
+    if (isShelf) {
+      return api.get(`/locations/all/attributes`, { params: { shelfId: locationIdOrShelfId } });
+    }
+    return api.get(`/locations/${locationIdOrShelfId}/attributes`);
+  },
+  create: (data: any) => {
+    // data debe incluir shelfId o locationId dependiendo del nivel
+    const id = data.shelfId || data.locationId || 'all';
+    return api.post(`/locations/${id}/attributes`, data);
+  },
+  update: (id: string, data: any) => api.put(`/locations/all/attributes/${id}`, data),
+  delete: (id: string) => api.delete(`/locations/all/attributes/${id}`),
 };
 
 // Users

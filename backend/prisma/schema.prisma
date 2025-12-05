@@ -86,26 +86,45 @@ model Location {
   icon        String?             // Emoji o nombre de icono
   color       String?             // Color hex para UI
   items       Item[]              // Items en este lugar
-  sublocations LocationAttribute[] // Lista de ubicaciones específicas (UB-XXXX)
+  shelves     Shelf[]             // Estanterías en este lugar
+  sublocations LocationAttribute[] // DEPRECATED: Mantenido por compatibilidad
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 
   @@map("locations")
 }
 
-// UBICACIONES específicas dentro de un lugar (ej: Estantería 1, Caja cables, UB-0001, etc)
-model LocationAttribute {
-  id          String   @id @default(cuid())
-  location    Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+// ESTANTERÍAS dentro de un lugar (ej: Estantería A, Estantería 1, ES-0001)
+model Shelf {
+  id          String              @id @default(cuid())
+  location    Location            @relation(fields: [locationId], references: [id], onDelete: Cascade)
   locationId  String
-  code        String   @unique // Código único UB-XXXX
-  name        String   // Nombre descriptivo (ej: "Estantería 1", "Caja cables")
+  code        String              @unique // Código único ES-XXXX
+  name        String              // Nombre descriptivo (ej: "Estantería A", "Rack 1")
   description String?
-  order       Int      @default(0) // Orden de visualización
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  order       Int                 @default(0) // Orden de visualización
+  sublocations LocationAttribute[] // Ubicaciones específicas dentro de esta estantería
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 
   @@unique([locationId, code]) // No puede haber dos códigos iguales en una ubicación
+  @@map("shelves")
+}
+
+// UBICACIONES específicas dentro de una estantería (ej: UB-0001, Cajón 1, etc)
+model LocationAttribute {
+  id          String    @id @default(cuid())
+  location    Location? @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId  String?   // Opcional: para backward compatibility con sistema antiguo
+  shelf       Shelf?    @relation(fields: [shelfId], references: [id], onDelete: Cascade)
+  shelfId     String?   // Opcional: para sistema de 3 niveles
+  code        String    @unique // Código único UB-XXXX
+  name        String    // Nombre descriptivo (ej: "Cajón superior", "Caja cables")
+  description String?
+  order       Int       @default(0) // Orden de visualización
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   @@map("location_attributes")
 }
 

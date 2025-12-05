@@ -5,49 +5,89 @@ import { authenticate } from '../middleware/auth';
 const router = Router();
 const prisma = new PrismaClient();
 
-// GET /api/locations/:locationId/attributes - Listar ubicaciones (sublocations) de un lugar
+// GET /api/locations/:locationId/attributes - Listar ubicaciones (sublocations) de un lugar o shelf
 router.get('/:locationId/attributes', authenticate, async (req: Request, res: Response) => {
   try {
     const { locationId } = req.params;
+    const { shelfId } = req.query;
 
-    const attributes = await prisma.locationAttribute.findMany({
-      where: { locationId },
-      orderBy: { order: 'asc' },
-    });
+    let attributes;
+    
+    if (shelfId) {
+      // Si se proporciona shelfId, buscar ubicaciones de ese shelf
+      attributes = await prisma.locationAttribute.findMany({
+        where: { shelfId: shelfId as string },
+        orderBy: { order: 'asc' },
+      });
+    } else {
+      // Buscar por locationId (backward compatibility) o todas si locationId es 'all'
+      if (locationId === 'all') {
+        attributes = await prisma.locationAttribute.findMany({
+          orderBy: { order: 'asc' },
+        });
+      } else {
+        // Solo buscar por locationId directo (backward compatibility con sistema antiguo)
+        attributes = await prisma.locationAttribute.findMany({
+          where: { locationId },
+          orderBy: { order: 'asc' },
+        });
+      }
+    }
 
     res.json(attributes);
   } catch (error) {
+    console.error('Error getting location attributes:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// POST /api/locations/:locationId/attributes - Crear ubicación (sublocation) para un lugar
+// POST /api/locations/:locationId/attributes - Crear ubicación (sublocation) para un lugar o shelf
 router.post('/:locationId/attributes', authenticate, async (req: Request, res: Response) => {
   try {
     const { locationId } = req.params;
-    const { code, name, description, order } = req.body;
+    const { code, name, description, order, shelfId } = req.body;
 
-    console.log('📝 Creando ubicación:', { locationId, code, name, description, order });
+    console.log('📝 Creando ubicación:', { locationId, shelfId, code, name, description, order });
 
-    // Verificar que el lugar existe
-    const location = await prisma.location.findUnique({
-      where: { id: locationId },
-    });
+    // Si se proporciona shelfId, verificar que el shelf existe
+    if (shelfId) {
+      const shelf = await prisma.shelf.findUnique({
+        where: { id: shelfId },
+      });
 
-    if (!location) {
-      console.log('❌ Lugar no encontrado:', locationId);
-      return res.status(404).json({ error: 'Lugar no encontrado' });
+      if (!shelf) {
+        console.log('❌ Estantería no encontrada:', shelfId);
+        return res.status(404).json({ error: 'Estantería no encontrada' });
+      }
+    } else {
+      // Si no hay shelfId, verificar que el lugar existe (backward compatibility)
+      const location = await prisma.location.findUnique({
+        where: { id: locationId },
+      });
+
+      if (!location) {
+        console.log('❌ Lugar no encontrado:', locationId);
+        return res.status(404).json({ error: 'Lugar no encontrado' });
+      }
     }
 
     // Crear ubicación
+    const dataToCreate: any = {
+      code,
+      name,
+      description,
+      order: order || 0,
+    };
+
+    // Agregar shelfId o locationId según corresponda
+    if (shelfId) {
+      dataToCreate.shelfId = shelfId;
+    } else if (locationId && locationId !== 'all') {
+      dataToCreate.locationId = locationId;
+    }
+
     const attribute = await prisma.locationAttribute.create({
-      data: {
-        locationId,
-        code,
-        name,
-        description,
-        order: order || 0,
-      },
+      data: dataToCreate,
     });
 
     console.log('✅ Ubicación creada:', attribute);
@@ -65,11 +105,11 @@ router.post('/:locationId/attributes', authenticate, async (req: Request, res: R
 router.put('/:locationId/attributes/:id', authenticate, async (req: Request, res: Response) => {
   try {
     const { id, locationId } = req.params;
-    const { code, name, description, order } = req.body;
+    const { code, name, description, order, shelfId } = req.body;
 
-    // Verificar que la ubicación existe y pertenece al lugar
-    const existingAttribute = await prisma.locationAttribute.findFirst({
-      where: { id, locationId },
+    // Verificar que la ubicación existe
+    const existingAttribute = await prisma.locationAttribute.findUnique({
+      where: { id },
     });
 
     if (!existingAttribute) {
@@ -84,7 +124,8 @@ router.put('/:locationId/attributes/:id', authenticate, async (req: Request, res
         name,
         description,
         order,
-      },
+        ...(shelfId !== undefined && { shelfId }),
+      } as any,
     });
 
     res.json(attribute);
@@ -99,11 +140,11 @@ router.put('/:locationId/attributes/:id', authenticate, async (req: Request, res
 // DELETE /api/locations/:locationId/attributes/:id - Eliminar ubicación
 router.delete('/:locationId/attributes/:id', authenticate, async (req: Request, res: Response) => {
   try {
-    const { id, locationId } = req.params;
+    const { id } = req.params;
 
-    // Verificar que la ubicación existe y pertenece al lugar
-    const existingAttribute = await prisma.locationAttribute.findFirst({
-      where: { id, locationId },
+    // Verificar que la ubicación existe
+    const existingAttribute = await prisma.locationAttribute.findUnique({
+      where: { id },
     });
 
     if (!existingAttribute) {

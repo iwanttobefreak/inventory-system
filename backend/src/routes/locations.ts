@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 // Validación
 const createLocationSchema = z.object({
-  code: z.string().min(1, 'El código es requerido').regex(/^UB-\d{4}$/, 'El código debe tener el formato UB-XXXX'),
+  code: z.string().optional(), // El código ahora es opcional para lugares (nivel 1)
   name: z.string().min(1, 'El nombre es requerido'),
   description: z.string().optional(),
   icon: z.string().optional(),
