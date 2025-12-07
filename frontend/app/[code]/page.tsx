@@ -73,8 +73,30 @@ export default function ItemCodePage() {
   }, []);
 
   useEffect(() => {
+    // Convertir código a mayúsculas para consistencia
+    const upperCode = code.toUpperCase();
+    console.log('🔍 [CODE] PAGE LOADED for code:', code);
+    console.log('🔍 Upper code:', upperCode);
+    console.log('🔍 Upper code starts with ES-:', upperCode.startsWith('ES-'));
+    console.log('🔍 Upper code starts with UB-:', upperCode.startsWith('UB-'));
+
+    // Handle shelf codes (ES-XXXX) and sublocation codes (UB-XXXX)
+    if (upperCode.startsWith('ES-')) {
+      console.log('🔄 Redirigiendo código de estantería:', upperCode);
+      console.log('🔄 URL destino:', `/dashboard?shelf=${upperCode}`);
+      window.location.href = `/dashboard?shelf=${upperCode}`;
+      return;
+    }
+    if (upperCode.startsWith('UB-')) {
+      console.log('🔄 Redirigiendo código de sublocalización:', upperCode);
+      console.log('🔄 URL destino:', `/dashboard?sublocation=${upperCode}`);
+      window.location.href = `/dashboard?sublocation=${upperCode}`;
+      return;
+    }
+
     // Validar que el código tenga el formato kf-XXXX
-    if (!code.match(/^kf-\d{4}$/i)) {
+    if (!upperCode.match(/^KF-\d{4}$/i)) {
+      console.log('🔄 Código no válido, redirigiendo a dashboard:', upperCode);
       router.push('/dashboard');
       return;
     }

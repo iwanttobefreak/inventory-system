@@ -1,31 +1,25 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
 // Esta página simplemente redirige al dashboard con el filtro de ubicación
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 export default function LocationRedirectPage({ params }: { params: { code: string } }) {
-  const router = useRouter();
-
   useEffect(() => {
-    // Extraer el código de la URL
     if (typeof window !== 'undefined') {
       const pathParts = window.location.pathname.split('/');
       const urlCode = pathParts[pathParts.length - 1];
       
-      // Asegurarse de que tiene el prefijo UB-
       const fullCode = urlCode.toUpperCase().startsWith('UB-') 
         ? urlCode.toUpperCase() 
         : `UB-${urlCode.toUpperCase()}`;
       
-      // Redirigir al dashboard con el parámetro sublocation
       console.log('🔄 Redirigiendo a dashboard con sublocation:', fullCode);
-      router.push(`/dashboard?sublocation=${fullCode}`);
+      window.location.href = `/dashboard?sublocation=${fullCode}`;
     }
-  }, [router]);
+  }, []);
 
   // Mostrar un mensaje de carga mientras redirige
   return (

@@ -39,6 +39,12 @@ export default function DashboardPage() {
 
   // Efecto para leer parámetros de URL y setear filtros (cuando venimos de una página UB-XXXX o ES-XXXX)
   useEffect(() => {
+    // Solo procesar si tenemos los datos necesarios
+    if (shelves.length === 0 || locationAttributes.length === 0) {
+      console.log('⏳ Esperando datos para procesar URL params...');
+      return;
+    }
+
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const locationParam = urlParams.get('location');
@@ -46,8 +52,8 @@ export default function DashboardPage() {
       const shelfParam = urlParams.get('shelf');
 
       console.log('📍 URL params:', { locationParam, sublocationParam, shelfParam });
-      console.log('📍 Location attributes disponibles:', locationAttributes);
-      console.log('📍 Shelves disponibles:', shelves);
+      console.log('📍 Location attributes disponibles:', locationAttributes.length);
+      console.log('📍 Shelves disponibles:', shelves.length);
 
       if (locationParam) {
         setFilterLocation(locationParam);
@@ -81,7 +87,16 @@ export default function DashboardPage() {
       // Si viene shelf por URL, buscar la estantería por código
       if (shelfParam && shelves.length > 0) {
         console.log('🔍 Buscando estantería con código:', shelfParam);
-        const shelf = shelves.find(s => s.code.toUpperCase() === shelfParam.toUpperCase());
+        console.log('🔍 shelfParam length:', shelfParam.length, 'chars');
+        console.log('🔍 shelfParam toUpperCase:', shelfParam.toUpperCase());
+        console.log('🔍 Estanterías disponibles:', shelves.map(s => ({ id: s.id, code: s.code, codeUpper: s.code.toUpperCase() })));
+        
+        const shelf = shelves.find(s => {
+          const match = s.code.toUpperCase() === shelfParam.toUpperCase();
+          console.log(`🔍 Comparando "${s.code.toUpperCase()}" === "${shelfParam.toUpperCase()}" => ${match}`);
+          return match;
+        });
+        
         console.log('🔍 Estantería encontrada:', shelf);
         
         if (shelf) {
@@ -91,6 +106,7 @@ export default function DashboardPage() {
           console.log('✅ Filtros establecidos - locationId:', shelf.locationId, 'shelfId:', shelf.id);
         } else {
           console.error('❌ No se encontró estantería con código:', shelfParam);
+          console.error('❌ Códigos disponibles:', shelves.map(s => s.code));
         }
       }
     }

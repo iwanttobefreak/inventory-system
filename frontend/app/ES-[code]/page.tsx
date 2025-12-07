@@ -1,31 +1,35 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
 // Esta página simplemente redirige al dashboard con el filtro de estantería
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 export default function ShelfRedirectPage({ params }: { params: { code: string } }) {
-  const router = useRouter();
-
+  console.log('🚀 SHELF REDIRECT PAGE LOADED for code:', params?.code);
+  console.log('🚀 Current pathname:', typeof window !== 'undefined' ? window.location.pathname : 'SSR');
+  
   useEffect(() => {
-    // Extraer el código de la URL
+    console.log('🔄 useEffect ejecutándose en ShelfRedirectPage');
     if (typeof window !== 'undefined') {
       const pathParts = window.location.pathname.split('/');
       const urlCode = pathParts[pathParts.length - 1];
       
-      // Asegurarse de que tiene el prefijo ES-
+      console.log('🔄 pathParts:', pathParts);
+      console.log('🔄 urlCode:', urlCode);
+      
       const fullCode = urlCode.toUpperCase().startsWith('ES-') 
         ? urlCode.toUpperCase() 
         : `ES-${urlCode.toUpperCase()}`;
       
-      // Redirigir al dashboard con el parámetro shelf
       console.log('🔄 Redirigiendo a dashboard con shelf:', fullCode);
-      router.push(`/dashboard?shelf=${fullCode}`);
+      console.log('🔄 URL final:', `/dashboard?shelf=${fullCode}`);
+      window.location.href = `/dashboard?shelf=${fullCode}`;
+    } else {
+      console.log('🔄 No estamos en el cliente aún');
     }
-  }, [router]);
+  }, []);
 
   // Mostrar un mensaje de carga mientras redirige
   return (
