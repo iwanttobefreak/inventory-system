@@ -79,6 +79,7 @@ const createItemSchema = z.object({
   categoryId: z.string(),
   status: z.enum(['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'REPAIR', 'LOST', 'RETIRED']).default('AVAILABLE'),
   locationId: z.string().optional(),
+  shelfId: z.string().optional(),
   brand: z.string().optional(),
   model: z.string().optional(),
   serialNumber: z.string().optional(),
@@ -126,6 +127,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       include: {
         category: true,
         location: true,
+        shelf: true,
       },
       orderBy: {
         createdAt: 'desc',

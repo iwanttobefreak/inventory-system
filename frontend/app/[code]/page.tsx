@@ -47,6 +47,7 @@ export default function ItemCodePage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   // Form state para crear/editar
   const [formData, setFormData] = useState({
@@ -234,9 +235,11 @@ export default function ItemCodePage() {
   };
 
   const handleShelfChange = async (shelfId: string) => {
+    const selectedShelf = shelves.find(s => s.id === shelfId);
     setFormData({ 
       ...formData, 
       shelfId, 
+      locationId: selectedShelf ? selectedShelf.locationId : '',
       attributes: { ...formData.attributes, sublocation: '' } 
     });
     setLocationSublocations([]);
@@ -355,10 +358,10 @@ export default function ItemCodePage() {
       }
       
       try {
-        // Redimensionar imagen si es necesario (máximo 400x520)
+        // Redimensionar imagen si es necesario (máximo 800x1040)
         console.log(`📸 Imagen original: ${file.name} - ${(file.size / 1024).toFixed(2)} KB - ${file.type}`);
         
-        const resizedFile = await resizeImage(file, 400, 520);
+        const resizedFile = await resizeImage(file, 800, 1040);
         
         console.log(`✅ Imagen redimensionada: ${resizedFile.name} - ${(resizedFile.size / 1024).toFixed(2)} KB`);
         
@@ -753,7 +756,7 @@ export default function ItemCodePage() {
                   📷 Imagen del artículo
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  💡 Las imágenes se redimensionan automáticamente a un máximo de 400x520px conservando las proporciones
+                  💡 Las imágenes se redimensionan automáticamente a un máximo de 800x1040px conservando las proporciones
                 </p>
                 {imagePreview ? (
                   <div className="relative">
@@ -1063,7 +1066,9 @@ export default function ItemCodePage() {
                     <img 
                       src={`${getBackendUrl()}${item.imageUrl}`}
                       alt={item.name}
-                      className="w-full h-auto max-h-96 object-contain bg-gray-50"
+                      className="w-full h-auto max-h-96 object-contain bg-gray-50 cursor-pointer hover:opacity-90 transition"
+                      onClick={() => setShowImageModal(true)}
+                      title="Click para ver en tamaño completo"
                     />
                   </div>
                 </div>
@@ -1383,7 +1388,9 @@ export default function ItemCodePage() {
                     <img 
                       src={`${getBackendUrl()}${item.imageUrl}`}
                       alt={item.name}
-                      className="w-full h-64 object-cover rounded-lg border-2 border-gray-300"
+                      className="w-full h-64 object-cover rounded-lg border-2 border-gray-300 cursor-pointer hover:opacity-90 transition"
+                      onClick={() => setShowImageModal(true)}
+                      title="Click para ver en tamaño completo"
                     />
                     <button
                       type="button"
@@ -1498,6 +1505,32 @@ export default function ItemCodePage() {
           </div>
         )}
       </div>
+
+      {/* Modal para ver imagen en tamaño completo */}
+      {showImageModal && item?.imageUrl && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowImageModal(false)}
+        >
+          <div className="relative max-w-7xl max-h-full">
+            <button
+              onClick={() => setShowImageModal(false)}
+              className="absolute -top-12 right-0 text-white text-4xl hover:text-gray-300 transition"
+            >
+              ✕
+            </button>
+            <img 
+              src={`${getBackendUrl()}${item.imageUrl}`}
+              alt={item.name}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <p className="text-white text-center mt-4 text-sm">
+              Haz clic fuera de la imagen para cerrar
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

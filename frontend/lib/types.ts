@@ -8,6 +8,8 @@ export interface Item {
   status: ItemStatus;
   location?: Location;
   locationId?: string;
+  shelf?: Shelf;
+  shelfId?: string; // Estantería (segundo nivel)
   purchaseDate?: string;
   purchaseValue?: number;
   brand?: string;

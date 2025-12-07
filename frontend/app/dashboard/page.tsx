@@ -20,7 +20,8 @@ export default function DashboardPage() {
   const [locationAttributes, setLocationAttributes] = useState<LocationAttribute[]>([]);
   const [loading, setLoading] = useState(true);
   
-  console.log('🔍 Dashboard render - shelves:', shelves, 'type:', typeof shelves, 'isArray:', Array.isArray(shelves));
+  console.log('� DASHBOARD COMPONENT LOADED - NEW VERSION');
+  console.log('�🔍 Dashboard render - shelves:', shelves, 'type:', typeof shelves, 'isArray:', Array.isArray(shelves));
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -36,37 +37,64 @@ export default function DashboardPage() {
     loadData();
   }, []);
 
-  // Efecto para leer parámetros de URL y setear filtros (cuando venimos de una página UB-XXXX)
+  // Efecto para leer parámetros de URL y setear filtros (cuando venimos de una página UB-XXXX o ES-XXXX)
   useEffect(() => {
-    if (typeof window !== 'undefined' && locationAttributes.length > 0) {
+    if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const locationParam = urlParams.get('location');
       const sublocationParam = urlParams.get('sublocation');
+      const shelfParam = urlParams.get('shelf');
 
-      console.log('📍 URL params:', { locationParam, sublocationParam });
+      console.log('📍 URL params:', { locationParam, sublocationParam, shelfParam });
       console.log('📍 Location attributes disponibles:', locationAttributes);
+      console.log('📍 Shelves disponibles:', shelves);
 
       if (locationParam) {
         setFilterLocation(locationParam);
       }
       
       // Si viene sublocation por URL, buscar el atributo por código
-      if (sublocationParam) {
+      if (sublocationParam && locationAttributes.length > 0) {
         console.log('🔍 Buscando atributo con código:', sublocationParam);
         const attr = locationAttributes.find(a => a.code.toUpperCase() === sublocationParam.toUpperCase());
         console.log('🔍 Atributo encontrado:', attr);
         
         if (attr) {
-          // Establecer tanto la ubicación padre como el atributo
+          // Establecer la ubicación padre
           setFilterLocation(attr.locationId);
+          
+          // Si la ubicación pertenece a una estantería, establecerla también
+          if (attr.shelfId) {
+            setFilterShelf(attr.shelfId);
+            console.log('✅ Filtros establecidos - locationId:', attr.locationId, 'shelfId:', attr.shelfId, 'attributeId:', attr.id);
+          } else {
+            console.log('✅ Filtros establecidos - locationId:', attr.locationId, 'attributeId:', attr.id);
+          }
+          
+          // Finalmente establecer el atributo
           setFilterLocationAttribute(attr.id);
-          console.log('✅ Filtros establecidos - locationId:', attr.locationId, 'attributeId:', attr.id);
         } else {
           console.error('❌ No se encontró atributo con código:', sublocationParam);
         }
       }
+
+      // Si viene shelf por URL, buscar la estantería por código
+      if (shelfParam && shelves.length > 0) {
+        console.log('🔍 Buscando estantería con código:', shelfParam);
+        const shelf = shelves.find(s => s.code.toUpperCase() === shelfParam.toUpperCase());
+        console.log('🔍 Estantería encontrada:', shelf);
+        
+        if (shelf) {
+          // Establecer tanto el lugar padre como la estantería
+          setFilterLocation(shelf.locationId);
+          setFilterShelf(shelf.id);
+          console.log('✅ Filtros establecidos - locationId:', shelf.locationId, 'shelfId:', shelf.id);
+        } else {
+          console.error('❌ No se encontró estantería con código:', shelfParam);
+        }
+      }
     }
-  }, [locationAttributes]);
+  }, [locationAttributes, shelves]);
 
   const loadData = async () => {
     try {
@@ -79,22 +107,24 @@ export default function DashboardPage() {
           return { data: [] }; // Devolver array vacío si falla
         }),
       ]);
+      console.log('🔍 ShelvesRes recibido:', shelvesRes);
+      console.log('🔍 ShelvesRes.data:', shelvesRes.data);
+      console.log('🔍 ShelvesRes.data.data:', shelvesRes.data?.data);
+      console.log('🔍 ShelvesRes.data.data es array?:', Array.isArray(shelvesRes.data?.data));
+      
       setItems(itemsRes.data || []);
       setCategories(categoriesRes.data || []);
       setLocations(locationsRes.data || []);
-      setShelves(shelvesRes.data || []);
+      // Forzar shelves como array puro
+      const shelvesArray = Array.isArray(shelvesRes.data?.data) ? shelvesRes.data.data : [];
+      console.log('🔍 Setting shelves to:', shelvesArray);
+      setShelves(shelvesArray);
+      
+      console.log('✅ Shelves establecidas en estado:', shelvesArray);
       
       // Cargar todos los atributos de ubicación
-      const allLocationAttributes: LocationAttribute[] = [];
-      for (const location of locationsRes.data) {
-        try {
-          const attrsRes = await locationAttributesAPI.getAll(location.id);
-          allLocationAttributes.push(...attrsRes.data);
-        } catch (error) {
-          console.error(`Error loading attributes for location ${location.id}:`, error);
-        }
-      }
-      setLocationAttributes(allLocationAttributes);
+      const attrsRes = await locationAttributesAPI.getAll();
+      setLocationAttributes(attrsRes.data || []);
     } catch (error) {
       console.error('Error loading data:', error);
       // Asegurarse de que los estados tengan valores por defecto
@@ -121,6 +151,9 @@ export default function DashboardPage() {
     const matchesStatus = !filterStatus || item.status === filterStatus;
     const matchesLocation = !filterLocation || item.locationId === filterLocation;
     
+    // Filtrar por estantería (shelf)
+    const matchesShelf = !filterShelf || item.shelfId === filterShelf;
+    
     // Buscar en attributes.sublocation si existe
     // Necesitamos encontrar el código de la ubicación seleccionada
     let matchesLocationAttribute = true;
@@ -137,7 +170,7 @@ export default function DashboardPage() {
       }
     }
     
-    return matchesSearch && matchesCategory && matchesStatus && matchesLocation && matchesLocationAttribute;
+    return matchesSearch && matchesCategory && matchesStatus && matchesLocation && matchesShelf && matchesLocationAttribute;
   });
 
   const stats = {
@@ -243,7 +276,7 @@ export default function DashboardPage() {
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Todas las categorías</option>
-              {categories.map((cat) => (
+              {categories.map((cat: Category) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.icon} {cat.name}
                 </option>
@@ -255,7 +288,7 @@ export default function DashboardPage() {
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Todos los estados</option>
-              {Object.entries(STATUS_LABELS).map(([key, label]) => (
+              {Object.entries(STATUS_LABELS).map(([key, label]: [string, string]) => (
                 <option key={key} value={key}>
                   {label}
                 </option>
@@ -271,7 +304,7 @@ export default function DashboardPage() {
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Todos los lugares</option>
-              {locations.map((loc) => (
+              {locations.map((loc: Location) => (
                 <option key={loc.id} value={loc.id}>
                   {loc.icon} {loc.name}
                 </option>
@@ -288,29 +321,28 @@ export default function DashboardPage() {
             >
               <option value="">Todas las estanterías</option>
               {(() => {
-                const shelvesArray = Array.isArray(shelves) ? shelves : [];
-                console.log('🔍 Rendering shelves dropdown:', { shelves, shelvesArray, isArray: Array.isArray(shelves) });
-                return shelvesArray
-                  .filter(shelf => !filterLocation || shelf.locationId === filterLocation)
-                  .map((shelf) => (
-                    <option key={shelf.id} value={shelf.id}>
-                      {shelf.code} - {shelf.name}
-                    </option>
-                  ));
+                console.log('🔍 Filtro estanterías:', { filterLocation, shelves: shelves.map((s: Shelf) => ({ id: s.id, locationId: s.locationId, code: s.code })) });
+                const filteredShelves = shelves.filter((shelf: Shelf) => !filterLocation || shelf.locationId === filterLocation);
+                console.log('🔍 Estanterías filtradas:', filteredShelves.map((s: Shelf) => ({ id: s.id, code: s.code })));
+                return filteredShelves.map((shelf: Shelf) => (
+                  <option key={shelf.id} value={shelf.id}>
+                    {shelf.code} - {shelf.name}
+                  </option>
+                ));
               })()}
             </select>
             <select
               value={filterLocationAttribute}
               onChange={(e) => setFilterLocationAttribute(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              disabled={!filterShelf}
+              disabled={!filterLocation}
             >
               <option value="">Todas las ubicaciones</option>
               {(() => {
-                const attrsArray = Array.isArray(locationAttributes) ? locationAttributes : [];
+                const attrsArray: LocationAttribute[] = Array.isArray(locationAttributes) ? locationAttributes as LocationAttribute[] : [];
                 console.log('🔍 Rendering locationAttributes dropdown:', { locationAttributes, attrsArray, isArray: Array.isArray(locationAttributes) });
                 return attrsArray
-                  .filter(attr => {
+                  .filter((attr: LocationAttribute) => {
                     if (filterShelf) {
                       // Si hay estantería seleccionada, mostrar solo ubicaciones de esa estantería
                       return attr.shelfId === filterShelf;
@@ -320,7 +352,7 @@ export default function DashboardPage() {
                     }
                     return true;
                   })
-                  .map((attr) => (
+                  .map((attr: LocationAttribute) => (
                     <option key={attr.id} value={attr.id}>
                       {attr.code} - {attr.name}
                     </option>
@@ -332,7 +364,7 @@ export default function DashboardPage() {
 
         {/* Items Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredItems.map((item) => (
+          {filteredItems.map((item: Item) => (
             <div
               key={item.id}
               onClick={() => router.push(`/${item.code}`)}
@@ -361,12 +393,17 @@ export default function DashboardPage() {
                       </span>
                     </div>
 
-                    {/* Lugar y Ubicación en un cuadro */}
-                    {(item.location || (item.attributes && item.attributes.sublocation)) && (
+                    {/* Lugar, Estantería y Ubicación en un cuadro */}
+                    {(item.location || item.shelf || (item.attributes && item.attributes.sublocation)) && (
                       <div className="bg-blue-50 border border-blue-200 rounded p-2">
                         {item.location && (
                           <p className="text-xs text-blue-800 font-medium">
                             {item.location.icon || '📍'} {item.location.name}
+                          </p>
+                        )}
+                        {item.shelf && (
+                          <p className="text-xs text-blue-700 font-medium">
+                            🗄️ {item.shelf.code} {item.shelf.name}
                           </p>
                         )}
                         {item.attributes && item.attributes.sublocation && (() => {

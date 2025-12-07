@@ -37,6 +37,8 @@ model Item {
   status        ItemStatus   @default(AVAILABLE)
   location      Location?    @relation(fields: [locationId], references: [id])
   locationId    String?
+  shelf         Shelf?       @relation(fields: [shelfId], references: [id], onDelete: Cascade)
+  shelfId       String?      // Opcional: para sistema de 3 niveles
   purchaseDate  DateTime?
   purchaseValue Float?
   brand         String?
@@ -104,6 +106,7 @@ model Shelf {
   description String?
   order       Int                 @default(0) // Orden de visualización
   sublocations LocationAttribute[] // Ubicaciones específicas dentro de esta estantería
+  items       Item[]              // Items que pertenecen a esta estantería
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 
