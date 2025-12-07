@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inventory_pass_2024}
       POSTGRES_DB: ${POSTGRES_DB:-inventory_db}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ${DIR_VOLUMENES:-./data}/postgres:/var/lib/postgresql/data
     ports:
       - "${DB_PORT:-5432}:5432"
     healthcheck:
@@ -37,7 +37,7 @@ services:
     ports:
       - "${BACKEND_PORT:-4000}:${BACKEND_PORT:-4000}"
     volumes:
-      - upload_data:/app/uploads
+      - ${DIR_VOLUMENES:-./data}/uploads:/app/uploads
     networks:
       - inventory_network
 
@@ -61,12 +61,6 @@ services:
       - "${FRONTEND_PORT:-3000}:3000"
     networks:
       - inventory_network
-
-volumes:
-  postgres_data:
-    driver: local
-  upload_data:
-    driver: local
 
 networks:
   inventory_network:

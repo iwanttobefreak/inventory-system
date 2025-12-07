@@ -284,7 +284,68 @@ export default function ItemCodePage() {
     }));
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Función para redimensionar imagen manteniendo proporciones
+  const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const img = new Image();
+        
+        img.onload = () => {
+          // Calcular nuevas dimensiones manteniendo proporción
+          let width = img.width;
+          let height = img.height;
+          
+          // Calcular ratio para ajustar al máximo
+          const widthRatio = maxWidth / width;
+          const heightRatio = maxHeight / height;
+          const ratio = Math.min(widthRatio, heightRatio, 1); // No agrandar si es más pequeña
+          
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+          
+          // Crear canvas para redimensionar
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('No se pudo obtener el contexto del canvas'));
+            return;
+          }
+          
+          // Dibujar imagen redimensionada
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convertir canvas a Blob y luego a File
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('Error al convertir la imagen'));
+              return;
+            }
+            
+            // Crear nuevo File con el nombre original
+            const resizedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: Date.now(),
+            });
+            
+            resolve(resizedFile);
+          }, file.type, 0.92); // 92% de calidad para JPEG
+        };
+        
+        img.onerror = () => reject(new Error('Error al cargar la imagen'));
+        img.src = e.target?.result as string;
+      };
+      
+      reader.onerror = () => reject(new Error('Error al leer el archivo'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Validar que sea una imagen
@@ -293,20 +354,26 @@ export default function ItemCodePage() {
         return;
       }
       
-      // Validar tamaño (máximo 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen no debe superar los 5MB');
-        return;
+      try {
+        // Redimensionar imagen si es necesario (máximo 400x520)
+        console.log(`📸 Imagen original: ${file.name} - ${(file.size / 1024).toFixed(2)} KB - ${file.type}`);
+        
+        const resizedFile = await resizeImage(file, 400, 520);
+        
+        console.log(`✅ Imagen redimensionada: ${resizedFile.name} - ${(resizedFile.size / 1024).toFixed(2)} KB`);
+        
+        setSelectedImage(resizedFile);
+        
+        // Crear preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(resizedFile);
+      } catch (error) {
+        console.error('Error redimensionando imagen:', error);
+        alert('Error al procesar la imagen. Por favor, intenta con otra.');
       }
-      
-      setSelectedImage(file);
-      
-      // Crear preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -685,6 +752,9 @@ export default function ItemCodePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   📷 Imagen del artículo
                 </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  💡 Las imágenes se redimensionan automáticamente a un máximo de 400x520px conservando las proporciones
+                </p>
                 {imagePreview ? (
                   <div className="relative">
                     <img 

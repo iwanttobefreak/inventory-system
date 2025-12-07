@@ -3,3 +3,14 @@ node_modules
 .env.local
 *.log
 .DS_Store
+
+# Directorios de datos persistentes (volúmenes)
+data/
+postgres/
+uploads/
+
+# Backups
+backups/
+*.sql
+*.tar.gz
+*.zip

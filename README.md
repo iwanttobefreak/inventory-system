@@ -319,7 +319,68 @@ services:
       - "8000:4000"  # Ahora en puerto 8000
 ```
 
-### Backup de la base de datos
+## 💾 Volúmenes y Backup
+
+### 📁 Configuración de volúmenes persistentes
+
+El sistema usa **directorios locales mapeados** en lugar de volúmenes Docker para facilitar backups y migración.
+
+**Configuración en `.env`:**
+```bash
+DIR_VOLUMENES=/Users/T054810/kairoframe
+```
+
+**Estructura de datos:**
+```
+/Users/T054810/kairoframe/
+├── postgres/         ← Base de datos PostgreSQL
+└── uploads/          ← Imágenes de artículos
+    └── items/
+```
+
+**Ventajas:**
+- ✅ Backup directo: `cp -r /Users/T054810/kairoframe backup/`
+- ✅ Migración fácil: Solo copiar la carpeta al nuevo servidor
+- ✅ Visibilidad: Ver archivos desde Finder/Explorer
+- ✅ Compatible con herramientas estándar de backup
+
+📖 **Documentación completa**: Ver [`VOLUMES_GUIDE.md`](./VOLUMES_GUIDE.md)
+
+### 🔄 Scripts de backup automatizados
+
+**Hacer backup completo:**
+```bash
+./backup.sh
+```
+
+**Restaurar desde backup:**
+```bash
+./restore.sh ~/backups/kairoframe/kairoframe-backup-YYYYMMDD-HHMMSS.tar.gz
+```
+
+**Características:**
+- ✅ Backup automático de base de datos (dump SQL)
+- ✅ Backup de todas las imágenes
+- ✅ Compresión automática (.tar.gz)
+- ✅ Limpieza de backups antiguos (> 7 días)
+- ✅ Restauración completa con un comando
+
+📖 **Guía completa de backups**: Ver [`BACKUP_GUIDE.md`](./BACKUP_GUIDE.md)
+
+### 🌐 Migrar a otro servidor
+
+```bash
+# 1. En el servidor origen
+./backup.sh
+scp ~/backups/kairoframe/kairoframe-backup-*.tar.gz user@nuevo-servidor:/tmp/
+
+# 2. En el servidor destino
+cd inventory-system
+vim .env  # Configurar DIR_VOLUMENES
+./restore.sh /tmp/kairoframe-backup-*.tar.gz
+```
+
+### Backup manual de la base de datos (método anterior)
 
 ```bash
 # Crear backup (desde el directorio del proyecto)
@@ -338,6 +399,7 @@ Edita `backend/prisma/seed.ts` y ejecuta:
 # Desde el directorio del proyecto
 cd /ruta/a/inventory-system
 docker-compose exec backend npx prisma db seed
+```
 ```
 
 ### Cambiar datos de la productora

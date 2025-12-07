@@ -20,10 +20,19 @@ interface LabelRange {
   end: number;
 }
 
+type LabelType = 'KF' | 'ES' | 'UB';
+
+const LABEL_TYPES = [
+  { id: 'KF' as LabelType, name: 'KF - Artículos', prefix: 'kf', digits: 4, description: 'Etiquetas para items del inventario' },
+  { id: 'ES' as LabelType, name: 'ES - Estanterías', prefix: 'es', digits: 4, description: 'Etiquetas para estanterías' },
+  { id: 'UB' as LabelType, name: 'UB - Ubicaciones', prefix: 'ub', digits: 4, description: 'Etiquetas para ubicaciones específicas' },
+];
+
 export default function LabelsPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
 
+  const [labelType, setLabelType] = useState<LabelType>('KF');
   const [selectedSize, setSelectedSize] = useState(LABEL_SIZES[0]);
   const [customWidth, setCustomWidth] = useState(60);
   const [customHeight, setCustomHeight] = useState(20);
@@ -79,11 +88,14 @@ export default function LabelsPage() {
     }, 500); // Debounce de 500ms
 
     return () => clearTimeout(timer);
-  }, [selectedSize, customWidth, customHeight, rangeInput, separationPercentage]);
+  }, [selectedSize, customWidth, customHeight, rangeInput, separationPercentage, labelType]);
 
-  // Generar código con formato kf-XXXX
+  // Generar código con formato según el tipo seleccionado
   const formatCode = (num: number): string => {
-    return `kf-${num.toString().padStart(4, '0')}`;
+    const labelConfig = LABEL_TYPES.find(t => t.id === labelType);
+    if (!labelConfig) return `kf-${num.toString().padStart(4, '0')}`;
+    
+    return `${labelConfig.prefix}-${num.toString().padStart(labelConfig.digits, '0')}`;
   };
 
   // Generar todas las etiquetas en array
@@ -316,6 +328,41 @@ export default function LabelsPage() {
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">⚙️ Configuración</h2>
 
+            {/* Tipo de Etiqueta */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tipo de Etiqueta
+              </label>
+              <div className="space-y-2">
+                {LABEL_TYPES.map((type) => (
+                  <label
+                    key={type.id}
+                    className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition ${
+                      labelType === type.id
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="labelType"
+                      value={type.id}
+                      checked={labelType === type.id}
+                      onChange={(e) => setLabelType(e.target.value as LabelType)}
+                      className="mt-1 mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">{type.name}</div>
+                      <div className="text-xs text-gray-500 mt-1">{type.description}</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        Ejemplo: {type.prefix.toUpperCase()}-{(1).toString().padStart(type.digits, '0')}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             {/* Tamaño de Etiqueta */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -385,7 +432,7 @@ export default function LabelsPage() {
                 Formatos válidos:
               </p>
               <ul className="mt-1 text-xs text-gray-500 list-disc list-inside">
-                <li><code>1-50</code> → Genera del kf-0001 al kf-0050</li>
+                <li><code>1-50</code> → Genera del {labelType.toLowerCase()}-{(1).toString().padStart(LABEL_TYPES.find(t => t.id === labelType)?.digits || 4, '0')} al {labelType.toLowerCase()}-{(50).toString().padStart(LABEL_TYPES.find(t => t.id === labelType)?.digits || 4, '0')}</li>
                 <li><code>1-10,15-20</code> → Genera múltiples rangos</li>
                 <li><code>1,5,10,25</code> → Códigos específicos</li>
               </ul>
@@ -419,6 +466,10 @@ export default function LabelsPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <h3 className="font-medium text-blue-900 mb-2">📊 Resumen</h3>
               <div className="space-y-1 text-sm text-blue-800">
+                <p>
+                  <span className="font-medium">Tipo:</span>{' '}
+                  {LABEL_TYPES.find(t => t.id === labelType)?.name}
+                </p>
                 <p>
                   <span className="font-medium">Tamaño:</span>{' '}
                   {selectedSize.id === 'custom' ? `${customWidth}mm x ${customHeight}mm` : `${selectedSize.width}mm x ${selectedSize.height}mm`}
