@@ -21,8 +21,15 @@ RUN npx prisma generate
 # Build de TypeScript
 RUN npm run build
 
+# Instalar netcat para el script de espera
+RUN apk add --no-cache netcat-openbsd
+
+# Copiar script de inicio
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Exponer puerto
 EXPOSE 4000
 
-# Script de inicio que ejecuta migraciones, seed y luego inicia el servidor
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && npm start"]
+# Usar script de inicio
+CMD ["/app/start.sh"]
