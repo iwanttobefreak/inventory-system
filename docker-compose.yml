@@ -32,7 +32,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://inventory_user:inventory_pass_2024@db:5432/inventory_db?schema=public}
       JWT_SECRET: ${JWT_SECRET:-tu_secreto_super_seguro_cambiar_en_produccion}
       PORT: ${BACKEND_PORT:-4000}
-      FRONTEND_URL: http://localhost:${FRONTEND_PORT:-3000}
+      FRONTEND_URL: http://frontend:3000
       NODE_ENV: ${NODE_ENV:-development}
     ports:
       - "${BACKEND_PORT:-4000}:${BACKEND_PORT:-4000}"
