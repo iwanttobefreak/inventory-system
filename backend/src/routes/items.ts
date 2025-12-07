@@ -282,7 +282,7 @@ router.get('/:code/qr', authenticate, async (req: AuthRequest, res: Response) =>
     }
 
     // Generar QR si no existe
-    const qrUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/item/${code}`;
+    const qrUrl = `${process.env.FRONTEND_URL || 'http://frontend:3000'}/item/${code}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl);
 
     // Actualizar item con el QR
