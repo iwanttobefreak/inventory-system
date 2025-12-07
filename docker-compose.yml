@@ -49,13 +49,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:${BACKEND_PORT:-4000}/api}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend:${BACKEND_PORT:-4000}/api}
         NEXT_PUBLIC_BACKEND_PORT: ${BACKEND_PORT:-4000}
     container_name: inventory_frontend
     depends_on:
       - backend
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:${BACKEND_PORT:-4000}/api}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend:${BACKEND_PORT:-4000}/api}
       NEXT_PUBLIC_BACKEND_PORT: ${BACKEND_PORT:-4000}
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
