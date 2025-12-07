@@ -6,7 +6,10 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Iniciando seed...');
 
-  // Crear usuario admin
+  // Flag para controlar si crear datos de demostración
+  const createDemoData = process.env.SEED_DEMO_DATA === 'true';
+
+  // Crear usuario admin (siempre se crea)
   const hashedPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@productora.com' },
@@ -20,6 +23,14 @@ async function main() {
   });
 
   console.log('✅ Usuario admin creado:', admin.email);
+
+  if (!createDemoData) {
+    console.log('ℹ️  SEED_DEMO_DATA=false - Solo se creó el usuario admin');
+    console.log('🎉 Seed completado exitosamente!');
+    return;
+  }
+
+  console.log('📦 Creando datos de demostración...');
 
   // Crear categorías
   const categories = [
