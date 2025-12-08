@@ -80,6 +80,17 @@ export default function ItemCodePage() {
     console.log('🔍 Upper code starts with ES-:', upperCode.startsWith('ES-'));
     console.log('🔍 Upper code starts with UB-:', upperCode.startsWith('UB-'));
 
+    // Si NO está autenticado y el código tiene formato válido, mostrar página especial
+    if (isClient && !isAuthenticated()) {
+      const isValidCode = upperCode.match(/^KF-\d{4}$/i) || upperCode.startsWith('ES-') || upperCode.startsWith('UB-');
+      if (isValidCode) {
+        console.log('🔄 Usuario no autenticado con código válido, mostrando página especial:', upperCode);
+        setNotFound(true); // Forzar mostrar página especial
+        setLoading(false);
+        return;
+      }
+    }
+
     // Handle shelf codes (ES-XXXX) and sublocation codes (UB-XXXX)
     if (upperCode.startsWith('ES-')) {
       console.log('🔄 Redirigiendo código de estantería:', upperCode);
@@ -487,10 +498,46 @@ export default function ItemCodePage() {
 
   // Vista de creación (item no existe)
   if (notFound) {
-    // Si NO está autenticado, redirigir a login
+    // Si NO está autenticado, mostrar página especial de "devuélvelo si lo encuentras"
     if (isClient && !isAuthenticated()) {
-      router.push('/login');
-      return null;
+      return (
+        <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
+          <div className="max-w-2xl mx-auto px-4">
+            {/* Mensaje de contacto */}
+            <div className="p-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg shadow-lg">
+              <h3 className="text-3xl font-bold text-gray-900 mb-6 flex items-center justify-center">
+                <span className="mr-3 text-4xl">📞</span>
+                ¿Has encontrado este artículo?
+              </h3>
+              <p className="text-gray-700 mb-6 text-center text-lg">
+                Si has encontrado este artículo es porque <strong>lo he perdido</strong>.
+                Por favor, contacta conmigo para devolverlo:
+              </p>
+              <div className="space-y-3">
+                <p className="text-2xl font-semibold text-gray-900 text-center whitespace-nowrap">
+                  ✉️ Email: <a href="mailto:hola@kairoframe.com" className="text-blue-600 hover:underline">hola@kairoframe.com</a>
+                </p>
+                <p className="text-2xl font-semibold text-gray-900 text-center whitespace-nowrap">
+                  🌐 Web: <a href="https://kairoframe.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">kairoframe.com</a>
+                </p>
+              </div>
+              <p className="text-gray-600 mt-8 text-center text-lg italic">
+                ¡Muchas gracias por tu ayuda! 🙏
+              </p>
+
+              {/* Botón de Login */}
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={() => router.push('/login')}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg font-medium"
+                >
+                  🔐 Acceder al Sistema
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
     }
 
     // Si está autenticado, mostrar formulario de creación
