@@ -73,6 +73,9 @@ export default function ItemCodePage() {
   }, []);
 
   useEffect(() => {
+    // Solo ejecutar cuando estemos en el cliente
+    if (!isClient) return;
+
     // Convertir código a mayúsculas para consistencia
     const upperCode = code.toUpperCase();
     console.log('🔍 [CODE] PAGE LOADED for code:', code);
@@ -81,28 +84,30 @@ export default function ItemCodePage() {
     console.log('🔍 Upper code starts with UB-:', upperCode.startsWith('UB-'));
 
     // Si NO está autenticado y el código tiene formato válido, mostrar página especial
-    if (isClient && !isAuthenticated()) {
+    if (!isAuthenticated()) {
       const isValidCode = upperCode.match(/^KF-\d{4}$/i) || upperCode.startsWith('ES-') || upperCode.startsWith('UB-');
       if (isValidCode) {
         console.log('🔄 Usuario no autenticado con código válido, mostrando página especial:', upperCode);
-        setNotFound(true); // Forzar mostrar página especial
+        setNotFound(true);
         setLoading(false);
         return;
       }
     }
 
-    // Handle shelf codes (ES-XXXX) and sublocation codes (UB-XXXX)
-    if (upperCode.startsWith('ES-')) {
-      console.log('🔄 Redirigiendo código de estantería:', upperCode);
-      console.log('🔄 URL destino:', `/dashboard?shelf=${upperCode}`);
-      window.location.href = `/dashboard?shelf=${upperCode}`;
-      return;
-    }
-    if (upperCode.startsWith('UB-')) {
-      console.log('🔄 Redirigiendo código de sublocalización:', upperCode);
-      console.log('🔄 URL destino:', `/dashboard?sublocation=${upperCode}`);
-      window.location.href = `/dashboard?sublocation=${upperCode}`;
-      return;
+    // Handle shelf codes (ES-XXXX) - SOLO si está autenticado
+    if (isAuthenticated()) {
+      if (upperCode.startsWith('ES-')) {
+        console.log('🔄 Redirigiendo código de estantería:', upperCode);
+        console.log('🔄 URL destino:', `/dashboard?shelf=${upperCode}`);
+        router.push(`/dashboard?shelf=${upperCode}`);
+        return;
+      }
+      if (upperCode.startsWith('UB-')) {
+        console.log('🔄 Redirigiendo código de sublocalización:', upperCode);
+        console.log('🔄 URL destino:', `/dashboard?sublocation=${upperCode}`);
+        router.push(`/dashboard?sublocation=${upperCode}`);
+        return;
+      }
     }
 
     // Validar que el código tenga el formato kf-XXXX
@@ -113,7 +118,7 @@ export default function ItemCodePage() {
     }
 
     loadData();
-  }, [code]);
+  }, [code, isClient]);
 
   // Efecto para actualizar el nombre automáticamente cuando cambian los atributos
   useEffect(() => {
