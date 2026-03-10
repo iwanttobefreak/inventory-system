@@ -427,13 +427,24 @@ export default function ItemCodePage() {
     e.preventDefault();
     
     try {
-      const submitData = {
-        ...formData,
-        code,
-        purchaseValue: formData.purchaseValue ? parseFloat(formData.purchaseValue) : undefined,
-        purchaseDate: formData.purchaseDate || undefined,
-        attributes: Object.keys(formData.attributes).length > 0 ? formData.attributes : undefined,
+      const submitData: any = {
+        name: formData.name || null,
+        description: formData.description || null,
+        categoryId: formData.categoryId,
+        status: formData.status,
+        locationId: formData.locationId || null,
+        shelfId: formData.shelfId || null,
+        brand: formData.brand || null,
+        model: formData.model || null,
+        serialNumber: formData.serialNumber || null,
+        notes: formData.notes || null,
+        purchaseDate: formData.purchaseDate || null,
+        purchaseValue: formData.purchaseValue ? parseFloat(formData.purchaseValue) : null,
       };
+
+      if (Object.keys(formData.attributes).length > 0) {
+        submitData.attributes = formData.attributes;
+      }
 
       let savedItem;
       if (notFound) {

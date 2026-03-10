@@ -245,7 +245,19 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 router.put('/:code', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { code } = req.params;
-    const data = req.body;
+    let data = req.body;
+
+    console.log('📝 PUT /items/:code - code:', code);
+    console.log('📝 PUT /items/:code - data:', JSON.stringify(data, null, 2));
+
+    // Filtrar campos que no existen en el modelo y eliminar valores null/undefined
+    const { location, ...validData } = data;
+    Object.keys(validData).forEach(key => {
+      if (validData[key] === undefined || validData[key] === null || validData[key] === '') {
+        delete validData[key];
+      }
+    });
+    data = validData;
 
     const oldItem = await prisma.item.findUnique({
       where: { code },
@@ -267,6 +279,8 @@ router.put('/:code', authenticate, async (req: AuthRequest, res: Response) => {
       },
     });
 
+    console.log('📝 PUT /items/:code - updated item:', item.id);
+
     // Crear historial si cambió el estado
     if (data.status && data.status !== oldItem.status) {
       await prisma.itemHistory.create({
@@ -283,6 +297,7 @@ router.put('/:code', authenticate, async (req: AuthRequest, res: Response) => {
 
     res.json(item);
   } catch (error) {
+    console.error('❌ PUT /items/:code - ERROR:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
