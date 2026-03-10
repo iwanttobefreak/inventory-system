@@ -107,8 +107,6 @@ export default function LoginPage() {
           </button>
 
           <div className="text-center text-sm text-gray-600 mt-4">
-            <p>Credenciales de prueba:</p>
-            <p className="font-mono text-xs mt-1">admin@productora.com / admin123</p>
           </div>
         </form>
       </div>

@@ -508,6 +508,7 @@ export default function ItemCodePage() {
       return (
         <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
           <div className="max-w-2xl mx-auto px-4">
+
             {/* Mensaje de contacto */}
             <div className="p-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg shadow-lg">
               <h3 className="text-3xl font-bold text-gray-900 mb-6 flex items-center justify-center">
@@ -529,7 +530,15 @@ export default function ItemCodePage() {
               <p className="text-gray-600 mt-8 text-center text-lg italic">
                 ¡Muchas gracias por tu ayuda! 🙏
               </p>
-
+           {/* Logo debajo de "Muchas gracias por tu ayuda" */}
+           <div className="mt-6 flex justify-center">
+             <img
+               src="/kairoframe-logo.png"
+               alt="Kairoframe"
+               className="h-16 md:h-20"
+               style={{ maxWidth: '200px', height: 'auto' }}
+             />
+           </div>
               {/* Botón de Login */}
               <div className="mt-6 flex justify-center">
                 <button
@@ -941,7 +950,16 @@ export default function ItemCodePage() {
             <p className="text-gray-600 mt-8 text-center text-lg italic">
               ¡Muchas gracias por tu ayuda! 🙏
             </p>
-            
+          {/* Logo debajo de "Muchas gracias por tu ayuda" */}
+          <div className="mt-6 flex justify-center">
+            <img
+              src="/kairoframe-logo.png"
+              alt="Kairoframe"
+              className="h-16 md:h-20"
+              style={{ maxWidth: '200px', height: 'auto' }}
+              />
+         </div>
+ 
             {/* Botón de Login */}
             <div className="mt-6 flex justify-center">
               <button
