@@ -427,8 +427,11 @@ export default function ItemCodePage() {
     e.preventDefault();
     
     try {
+      // Excluir campos que no existen en el schema de Prisma
+      const { location, ...formDataWithoutLocation } = formData;
+      
       const submitData = {
-        ...formData,
+        ...formDataWithoutLocation,
         code,
         purchaseValue: formData.purchaseValue ? parseFloat(formData.purchaseValue) : undefined,
         purchaseDate: formData.purchaseDate || undefined,

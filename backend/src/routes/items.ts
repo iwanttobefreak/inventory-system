@@ -283,6 +283,7 @@ router.put('/:code', authenticate, async (req: AuthRequest, res: Response) => {
 
     res.json(item);
   } catch (error) {
+    console.error('Error updating item:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
