@@ -87,6 +87,9 @@ export const itemsAPI = {
     });
   },
   deleteImage: (code: string) => api.delete(`/items/${code}/image`),
+  // Cambiar estado (para escaneo QR en bolo)
+  changeStatus: (code: string, status: string, expectedCurrentStatus?: string) => 
+    api.post(`/items/${code}/status`, { status, expectedCurrentStatus }),
 };
 
 // Categories

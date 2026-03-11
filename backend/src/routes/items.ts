@@ -431,4 +431,63 @@ router.delete('/:code/image', authenticate, async (req: AuthRequest, res: Respon
   }
 });
 
+// POST /api/items/:code/status - Cambiar estado de un item (para escaneo QR)
+router.post('/:code/status', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { code } = req.params;
+    const { status, expectedCurrentStatus } = req.body;
+    
+    // Validar que el estado es válido
+    const validStatuses = ['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'REPAIR', 'LOST', 'RETIRED'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Estado no válido' });
+    }
+    
+    const item = await prisma.item.findUnique({
+      where: { code },
+    });
+    
+    if (!item) {
+      return res.status(404).json({ error: 'Item no encontrado' });
+    }
+    
+    // Si se especifica un estado esperado, verificar que coincida
+    if (expectedCurrentStatus && item.status !== expectedCurrentStatus) {
+      return res.status(400).json({ 
+        error: `El item no está en el estado esperado. Estado actual: ${item.status}`,
+        currentStatus: item.status,
+        expectedStatus: expectedCurrentStatus
+      });
+    }
+    
+    const oldStatus = item.status;
+    
+    const updatedItem = await prisma.item.update({
+      where: { code },
+      data: { status },
+      include: {
+        category: true,
+        location: true,
+      },
+    });
+    
+    // Crear historial del cambio de estado
+    await prisma.itemHistory.create({
+      data: {
+        itemId: item.id,
+        action: 'Cambio de estado (QR)',
+        description: `Estado cambiado de ${oldStatus} a ${status}`,
+        performedBy: req.user?.email || 'Usuario',
+        oldStatus: oldStatus,
+        newStatus: status,
+      },
+    });
+    
+    res.json(updatedItem);
+  } catch (error) {
+    console.error('Error changing item status:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
