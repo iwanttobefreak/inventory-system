@@ -282,6 +282,31 @@ export default function BoloScanPage() {
       const targetStatus = mode === 'to-bolo' ? 'IN_USE' : 'AVAILABLE';
       const expectedCurrentStatus = mode === 'from-bolo' ? 'IN_USE' : undefined;
       
+      // Verificar si el item ya está en el bolo (solo en modo "to-bolo")
+      if (mode === 'to-bolo') {
+        const existingItem = itemsInUse.find(item => item.code.toLowerCase() === itemCode.toLowerCase());
+        if (existingItem) {
+          const infoItem: ScannedItem = {
+            code: itemCode,
+            name: existingItem.name,
+            status: 'success',
+            message: 'ℹ️ Ya está en el bolo',
+            timestamp: new Date(),
+          };
+          
+          setCurrentItem(infoItem);
+          if (audioSuccessRef.current) audioSuccessRef.current.play().catch(() => {});
+          
+          setTimeout(() => {
+            if (!isMountedRef.current) return;
+            isProcessingRef.current = false;
+            setCurrentItem(null);
+          }, 2000);
+          
+          return;
+        }
+      }
+      
       const response = await itemsAPI.changeStatus(itemCode, targetStatus, expectedCurrentStatus);
       
       const successItem: ScannedItem = {
@@ -300,6 +325,10 @@ export default function BoloScanPage() {
       // Si se devolvió exitosamente, quitar de la lista de items en uso
       if (mode === 'from-bolo') {
         setItemsInUse(prev => prev.filter(item => item.code !== itemCode));
+      } else {
+        // Si se añadió al bolo, añadir a la lista de items en uso
+        const newItem = response.data;
+        setItemsInUse(prev => [newItem, ...prev]);
       }
       
       if (audioSuccessRef.current) audioSuccessRef.current.play().catch(() => {});
