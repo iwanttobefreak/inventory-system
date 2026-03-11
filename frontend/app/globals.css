@@ -25,3 +25,12 @@ body {
     )
     rgb(var(--background-start-rgb));
 }
+
+/* Fix for form elements text visibility */
+input, select, textarea {
+  color: rgb(17, 24, 39); /* text-gray-900 */
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgb(156, 163, 175); /* text-gray-400 */
+}
