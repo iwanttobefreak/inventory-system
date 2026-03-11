@@ -75,18 +75,18 @@ async function getNextCode(): Promise<string> {
 const createItemSchema = z.object({
   code: z.string().optional(), // Ahora es opcional, se genera automáticamente si no se provee
   name: z.string(),
-  description: z.string().optional(),
+  description: z.string().nullish(),
   categoryId: z.string(),
   status: z.enum(['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'REPAIR', 'LOST', 'RETIRED']).default('AVAILABLE'),
-  locationId: z.string().optional(),
-  shelfId: z.string().optional(),
-  brand: z.string().optional(),
-  model: z.string().optional(),
-  serialNumber: z.string().optional(),
-  purchaseDate: z.string().optional(),
-  purchaseValue: z.number().optional(),
-  notes: z.string().optional(),
-  attributes: z.record(z.any()).optional(), // Atributos personalizados como JSON
+  locationId: z.string().nullish(),
+  shelfId: z.string().nullish(),
+  brand: z.string().nullish(),
+  model: z.string().nullish(),
+  serialNumber: z.string().nullish(),
+  purchaseDate: z.string().nullish(),
+  purchaseValue: z.number().nullish(),
+  notes: z.string().nullish(),
+  attributes: z.record(z.any()).nullish(), // Atributos personalizados como JSON
 });
 
 // GET /api/items/next-code - Obtener el siguiente código disponible
@@ -209,11 +209,19 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     const qrUrl = `${process.env.FRONTEND_URL || 'https://kairoframe.lobo99.info'}/${code}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl);
 
+    // Limpiar datos: convertir null a undefined y eliminar campos vacíos
+    const cleanedData: any = {};
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        cleanedData[key] = value;
+      }
+    });
+
     const item = await prisma.item.create({
       data: {
-        ...data,
+        ...cleanedData,
         code, // Usar el código generado o provisto
-        purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
+        purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
         qrCodeUrl: qrCodeDataUrl,
       },
       include: {
@@ -235,7 +243,8 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     res.status(201).json(item);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
+      const formattedErrors = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      return res.status(400).json({ error: formattedErrors });
     }
     res.status(500).json({ error: 'Internal server error' });
   }
