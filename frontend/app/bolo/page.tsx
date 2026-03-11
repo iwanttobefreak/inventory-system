@@ -326,9 +326,16 @@ export default function BoloScanPage() {
       if (mode === 'from-bolo') {
         setItemsInUse(prev => prev.filter(item => item.code !== itemCode));
       } else {
-        // Si se añadió al bolo, añadir a la lista de items en uso
+        // Si se añadió al bolo, añadir a la lista solo si no existe
         const newItem = response.data;
-        setItemsInUse(prev => [newItem, ...prev]);
+        setItemsInUse(prev => {
+          // Verificar si ya existe para no duplicar
+          const exists = prev.some(item => item.code === newItem.code);
+          if (exists) {
+            return prev;
+          }
+          return [newItem, ...prev];
+        });
       }
       
       if (audioSuccessRef.current) audioSuccessRef.current.play().catch(() => {});
