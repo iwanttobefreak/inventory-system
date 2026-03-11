@@ -75,18 +75,18 @@ async function getNextCode(): Promise<string> {
 const createItemSchema = z.object({
   code: z.string().optional(), // Ahora es opcional, se genera automáticamente si no se provee
   name: z.string(),
-  description: z.string().optional(),
+  description: z.string().nullish(),
   categoryId: z.string(),
   status: z.enum(['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'REPAIR', 'LOST', 'RETIRED']).default('AVAILABLE'),
-  locationId: z.string().optional(),
-  shelfId: z.string().optional(),
-  brand: z.string().optional(),
-  model: z.string().optional(),
-  serialNumber: z.string().optional(),
-  purchaseDate: z.string().optional(),
-  purchaseValue: z.number().optional(),
-  notes: z.string().optional(),
-  attributes: z.record(z.any()).optional(), // Atributos personalizados como JSON
+  locationId: z.string().nullish(),
+  shelfId: z.string().nullish(),
+  brand: z.string().nullish(),
+  model: z.string().nullish(),
+  serialNumber: z.string().nullish(),
+  purchaseDate: z.string().nullish(),
+  purchaseValue: z.number().nullish(),
+  notes: z.string().nullish(),
+  attributes: z.record(z.any()).nullish(), // Atributos personalizados como JSON
 });
 
 // GET /api/items/next-code - Obtener el siguiente código disponible
@@ -209,11 +209,29 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     const qrUrl = `${process.env.FRONTEND_URL || 'https://kairoframe.lobo99.info'}/${code}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl);
 
+    // Limpiar datos: convertir null a undefined para campos opcionales
+    const cleanedData: any = {
+      name: data.name,
+      description: data.description ?? undefined,
+      categoryId: data.categoryId,
+      status: data.status,
+      locationId: data.locationId ?? undefined,
+      shelfId: data.shelfId ?? undefined,
+      brand: data.brand ?? undefined,
+      model: data.model ?? undefined,
+      serialNumber: data.serialNumber ?? undefined,
+      purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
+      purchaseValue: data.purchaseValue ?? undefined,
+      notes: data.notes ?? undefined,
+      attributes: data.attributes ?? undefined,
+    };
+
+    console.log('📝 Cleaned data for Prisma:', JSON.stringify(cleanedData, null, 2));
+
     const item = await prisma.item.create({
       data: {
-        ...data,
-        code, // Usar el código generado o provisto
-        purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
+        ...cleanedData,
+        code,
         qrCodeUrl: qrCodeDataUrl,
       },
       include: {
@@ -232,12 +250,15 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       },
     });
 
+    console.log('✅ Item created successfully:', item.id);
     res.status(201).json(item);
   } catch (error) {
+    console.error('❌ Error creating item:', error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
+      const formattedErrors = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      return res.status(400).json({ error: formattedErrors });
     }
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: (error as Error).message });
   }
 });
 
@@ -247,6 +268,9 @@ router.put('/:code', authenticate, async (req: AuthRequest, res: Response) => {
     const { code } = req.params;
     const data = req.body;
 
+    console.log('📝 PUT /items/:code - code:', code);
+    console.log('📝 PUT /items/:code - data:', JSON.stringify(data, null, 2));
+
     const oldItem = await prisma.item.findUnique({
       where: { code },
     });
@@ -255,17 +279,35 @@ router.put('/:code', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Item not found' });
     }
 
+    // Limpiar datos: filtrar campos undefined/null y campos que no existen en Prisma
+    const cleanedData: any = {};
+    
+    if (data.name !== undefined && data.name !== null) cleanedData.name = data.name;
+    if (data.description !== undefined) cleanedData.description = data.description || undefined;
+    if (data.categoryId !== undefined && data.categoryId !== null) cleanedData.categoryId = data.categoryId;
+    if (data.status !== undefined && data.status !== null) cleanedData.status = data.status;
+    if (data.locationId !== undefined) cleanedData.locationId = data.locationId || undefined;
+    if (data.shelfId !== undefined) cleanedData.shelfId = data.shelfId || undefined;
+    if (data.brand !== undefined) cleanedData.brand = data.brand || undefined;
+    if (data.model !== undefined) cleanedData.model = data.model || undefined;
+    if (data.serialNumber !== undefined) cleanedData.serialNumber = data.serialNumber || undefined;
+    if (data.purchaseDate !== undefined) cleanedData.purchaseDate = data.purchaseDate ? new Date(data.purchaseDate) : undefined;
+    if (data.purchaseValue !== undefined) cleanedData.purchaseValue = data.purchaseValue ?? undefined;
+    if (data.notes !== undefined) cleanedData.notes = data.notes || undefined;
+    if (data.attributes !== undefined) cleanedData.attributes = data.attributes || undefined;
+
+    console.log('📝 Cleaned data for Prisma:', JSON.stringify(cleanedData, null, 2));
+
     const item = await prisma.item.update({
       where: { code },
-      data: {
-        ...data,
-        purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
-      },
+      data: cleanedData,
       include: {
         category: true,
         location: true,
       },
     });
+
+    console.log('✅ PUT /items/:code - updated item:', item.id);
 
     // Crear historial si cambió el estado
     if (data.status && data.status !== oldItem.status) {
@@ -283,7 +325,8 @@ router.put('/:code', authenticate, async (req: AuthRequest, res: Response) => {
 
     res.json(item);
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ PUT /items/:code - ERROR:', error);
+    res.status(500).json({ error: 'Internal server error', details: (error as Error).message });
   }
 });
 
