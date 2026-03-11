@@ -266,7 +266,19 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 router.put('/:code', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { code } = req.params;
-    const data = req.body;
+    let data = req.body;
+
+    console.log('📝 PUT /items/:code - code:', code);
+    console.log('📝 PUT /items/:code - data:', JSON.stringify(data, null, 2));
+
+    // Filtrar campos que no existen en el modelo y eliminar valores null/undefined
+    const { location, ...validData } = data;
+    Object.keys(validData).forEach(key => {
+      if (validData[key] === undefined || validData[key] === null || validData[key] === '') {
+        delete validData[key];
+      }
+    });
+    data = validData;
 
     console.log('📝 PUT /items/:code - code:', code);
     console.log('📝 PUT /items/:code - data:', JSON.stringify(data, null, 2));
